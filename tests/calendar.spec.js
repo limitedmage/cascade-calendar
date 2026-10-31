@@ -134,8 +134,8 @@ test("remounts after Drupal replaces results and remains usable on mobile", asyn
   await expect(page.locator(`#${resultsId}`)).toContainText("Updated Drupal listing");
 });
 
-test("busy days expand to show every ride without internal scrolling", async ({ page }) => {
-  await setup(page, () => ({
+test("expands busy days or collapses them to scrolling cells without reloading rides", async ({ page }) => {
+  const requests = await setup(page, () => ({
     body: results(Array.from({ length: 15 }, (_, index) => card(index, `Ride ${index}`, "2026-10-31")).join("")),
   }));
   await page.goto(`${origin}${route}`);
@@ -151,6 +151,70 @@ test("busy days expand to show every ride without internal scrolling", async ({ 
   expect(layout.fits).toBe(true);
   expect(layout.scrolls).toBe(false);
   expect(layout.height).toBeGreaterThan(220);
+  const before = requests.length;
+  const collapse = page.getByRole("button", { name: "Collapse calendar", exact: true });
+  await expect(collapse).toHaveText("");
+  await expect(collapse).toHaveAttribute("aria-expanded", "true");
+  expect(await collapse.evaluate((node) => node.previousElementSibling.matches(".cc-jump"))).toBe(true);
+  await collapse.focus();
+  await page.keyboard.press("Enter");
+  const expand = page.getByRole("button", { name: "Expand calendar", exact: true });
+  await expect(expand).toHaveAttribute("aria-expanded", "false");
+  await expect(day).toHaveCSS("height", "220px");
+  expect(await day.evaluate((node) => node.scrollHeight > node.clientHeight)).toBe(true);
+  await expect(day.locator(".cc-ride")).toHaveCount(15);
+  await expect(page.locator(".cc-help")).toContainText("Scroll within busy days");
+  await day.locator(".cc-ride").last().focus();
+  expect(await day.evaluate((node) => node.scrollTop > 0)).toBe(true);
+  await expand.click();
+  expect(await day.evaluate((node) => node.scrollHeight > node.clientHeight)).toBe(false);
+  await expect(page.locator(".cc-help")).not.toContainText("Scroll within busy days");
+  expect(requests.length).toBe(before);
+});
+
+test("saves calendar expansion in local storage across reloads, navigation, tabs, and remounts", async ({ page, context }) => {
+  await setup(page);
+  await page.goto(`${origin}${route}`);
+  await page.getByRole("button", { name: "Show calendar", exact: true }).click();
+  await page.getByRole("button", { name: "Collapse calendar", exact: true }).click();
+  expect(await page.evaluate(() => localStorage.getItem("cascade-calendar-expanded"))).toBe("false");
+  await page.reload();
+  await expect(page.getByRole("button", { name: "Expand calendar", exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Next month", exact: true }).click();
+  await expect(page.locator(".cc-heading")).toHaveText("November 2026");
+  await expect(page.getByRole("button", { name: "Expand calendar", exact: true })).toBeVisible();
+  await page.evaluate((html) => {
+    document.querySelector("#block-views-block-rides-events-search-mainblock").outerHTML = html;
+  }, results(card(3, "Updated listing", "2026-11-01", "09:00", "-08:00")));
+  await expect(page.locator(".cc-ride")).toHaveText(/Updated listing/);
+  await expect(page.getByRole("button", { name: "Expand calendar", exact: true })).toBeVisible();
+  const other = await context.newPage();
+  await setup(other);
+  await other.goto(`${origin}${route}`);
+  await other.getByRole("button", { name: "Show calendar", exact: true }).click();
+  await expect(other.getByRole("button", { name: "Expand calendar", exact: true })).toBeVisible();
+  await other.getByRole("button", { name: "Expand calendar", exact: true }).click();
+  await page.evaluate((html) => {
+    document.querySelector("#block-views-block-rides-events-search-mainblock").outerHTML = html;
+  }, results(card(4, "Another replacement", "2026-11-01", "09:00", "-08:00")));
+  await expect(page.locator(".cc-ride")).toHaveText(/Another replacement/);
+  expect(await page.evaluate(() => localStorage.getItem("cascade-calendar-expanded"))).toBe("true");
+  await page.reload();
+  await expect(page.getByRole("button", { name: "Collapse calendar", exact: true })).toBeVisible();
+  await other.close();
+});
+
+test("keeps expansion usable when local storage is unavailable", async ({ page }) => {
+  await setup(page);
+  await page.addInitScript(() => {
+    Storage.prototype.getItem = Storage.prototype.setItem = () => { throw new Error("Storage unavailable"); };
+  });
+  await page.goto(`${origin}${route}`);
+  await page.getByRole("button", { name: "Show calendar", exact: true }).click();
+  await page.getByRole("button", { name: "Collapse calendar", exact: true }).click();
+  await expect(page.locator(".cc-day").first()).toHaveCSS("height", "220px");
+  await page.getByRole("button", { name: "Expand calendar", exact: true }).click();
+  await expect(page.locator(".cc-root")).not.toHaveClass(/cc-collapsed/);
 });
 
 test("shows existing rides immediately, renders pages progressively, and caches completed results", async ({ page }) => {

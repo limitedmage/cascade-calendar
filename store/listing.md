@@ -33,11 +33,11 @@ Bring a calendar view back to Cascade Bicycle Club's free group ride search.
 - Spot cancelled rides with a CANCELLED label and crossed-out name.
 - Use the calendar with the Dark Reader extension.
 
-Ride times follow Cascade's Pacific dates. Busy days expand to show every ride, and recent results are reused for faster view switching.
+Ride times follow Cascade's Pacific dates. Busy days expand to show every ride; an expand/collapse icon beside Go to date switches to compact, scrolling days and remembers your choice. Recent results are reused for faster view switching.
 
 Works on https://cascade.org/rides-events/ride-event-search. The extension does not run on other sites.
 
-Privacy: website content and search/filter selections are handled to render the calendar. Ride requests go only to Cascade over HTTPS. The view choice stays in the current tab's session storage; short-lived results stay in memory. No developer server, analytics, ads, or remotely executed code.
+Privacy: website content and search/filter selections are handled to render the calendar. Ride requests go only to Cascade over HTTPS. The list/calendar choice stays in the current tab's session storage; the expand/collapse preference persists in Cascade's local storage. Short-lived results stay in memory. No developer server, analytics, ads, or remotely executed code.
 
 This is an unofficial community project, not affiliated with or endorsed by Cascade Bicycle Club. Ride availability and details come from Cascade; always check the original ride page before attending.
 

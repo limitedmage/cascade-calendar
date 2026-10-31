@@ -8,14 +8,20 @@
   const RESULTS = "#block-views-block-rides-events-search-mainblock";
   const FORM = "#views-exposed-form-rides-events-search-mainblock";
   const PREFERENCE = "cascade-calendar-view";
+  const EXPANSION_PREFERENCE = "cascade-calendar-expanded";
   let calendarMode = false;
   try {
     calendarMode = sessionStorage.getItem(PREFERENCE) === "calendar";
+  } catch {}
+  let expanded = true;
+  try {
+    expanded = localStorage.getItem(EXPANSION_PREFERENCE) !== "false";
   } catch {}
   let block;
   let host;
   let panel;
   let toggle;
+  let sizeToggle;
   let controller;
   let month;
   let signature = "";
@@ -296,6 +302,16 @@
     else controller?.abort();
   }
 
+  function setExpanded(enabled) {
+    expanded = enabled;
+    host.classList.toggle("cc-collapsed", !enabled);
+    const label = enabled ? "Collapse calendar" : "Expand calendar";
+    sizeToggle.setAttribute("aria-label", label);
+    sizeToggle.setAttribute("aria-expanded", String(enabled));
+    sizeToggle.title = label;
+    panel.querySelector(".cc-help").textContent = `Use the sidebar filters to narrow rides.${enabled ? "" : " Scroll within busy days to see every ride."} Month navigation updates From and To; other filters are kept.`;
+  }
+
   function mount(nextBlock) {
     controller?.abort();
     block?.classList.remove("cc-list-hidden");
@@ -341,7 +357,20 @@
       }
     });
     label.append(jump);
-    toolbar.append(label);
+    sizeToggle = button("", null, () => {
+      setExpanded(!expanded);
+      try {
+        localStorage.setItem(EXPANSION_PREFERENCE, String(expanded));
+      } catch {}
+    });
+    sizeToggle.classList.add("cc-size-toggle");
+    const divider = element("span", "cc-size-divider");
+    divider.setAttribute("aria-hidden", "true");
+    sizeToggle.append(divider);
+    sizeToggle.setAttribute("aria-controls", "cc-calendar-grid");
+    const dateControls = element("div", "cc-date-controls");
+    dateControls.append(label, sizeToggle);
+    toolbar.append(dateControls);
     const status = element("p", "cc-status");
     status.setAttribute("role", "status");
     const retry = button("Retry", null, load);
@@ -349,10 +378,13 @@
     const scroll = element("div", "cc-scroll");
     scroll.tabIndex = 0;
     scroll.setAttribute("aria-label", "Monthly calendar; scroll horizontally on small screens");
-    scroll.append(element("div", "cc-grid"));
+    const grid = element("div", "cc-grid");
+    grid.id = "cc-calendar-grid";
+    scroll.append(grid);
     panel.append(toolbar, element("p", "cc-help", "Use the sidebar filters to narrow rides. Month navigation updates From and To; other filters are kept."), status, retry, scroll);
     host.append(viewBar, panel);
     block.before(host);
+    setExpanded(expanded);
     setMode(calendarMode);
   }
 
