@@ -95,6 +95,9 @@ html[data-darkreader-scheme="dark"] .cc-root {
 .cc-today .cc-day-number { border-radius: 50%; color: var(--cc-today-text); background: var(--cc-ink); }
 .cc-root .cc-ride { display: block; color: var(--cc-ink); background: var(--cc-ride); border-left: 3px solid var(--cc-accent); border-radius: 4px; padding: 6px; margin-bottom: 7px; text-decoration: none; overflow-wrap: anywhere; }
 .cc-root .cc-ride:hover { background: var(--cc-ride-hover); text-decoration: underline; }
+.cc-root .cc-ride-past { opacity: 0.85; }
+.cc-ride-past .cc-ride-meta { color: var(--cc-text); }
+.cc-root .cc-ride-past:hover, .cc-root .cc-ride-past:focus-visible { opacity: 1; }
 .cc-ride-time, .cc-ride-title, .cc-ride-meta { display: block; }
 .cc-ride-time { font-size: 11px; }
 .cc-ride-title { font-size: 12px; font-weight: 700; margin: 3px 0; }

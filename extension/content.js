@@ -115,12 +115,19 @@
       const cancelled = /\bcancell?ed\b/i.test(title)
         || [...card.querySelectorAll(".btn-tag")].some((tag) => /\bcancell?ed\b/i.test(tag.textContent));
       rides.push({
-        date: start.slice(0, 10), sort: start.slice(11, 16), title, url: url.href,
+        start, date: start.slice(0, 10), sort: start.slice(11, 16), title, url: url.href,
         time: times.join(" - "), metadata: metadata || "", pace, paceRank, name, cancelled,
       });
     }
     return rides;
   };
+
+  function updatePastRides() {
+    const now = Date.now();
+    for (const ride of panel?.querySelectorAll(".cc-ride") || []) {
+      ride.classList.toggle("cc-ride-past", Date.parse(ride.dataset.start) < now);
+    }
+  }
 
   function render(rides) {
     const grid = panel.querySelector(".cc-grid");
@@ -157,6 +164,7 @@
         for (const ride of grouped.get(key) || []) {
           const link = element("a", "cc-ride");
           link.href = ride.url;
+          link.dataset.start = ride.start;
           if (ride.pace) link.dataset.pace = ride.pace;
           if (ride.cancelled) {
             link.classList.add("cc-ride-cancelled");
@@ -171,6 +179,7 @@
       }
       grid.append(cell);
     }
+    updatePastRides();
   }
 
   async function load() {
@@ -372,5 +381,8 @@
     timer = setTimeout(reconcile, 100);
   });
   observer.observe(document.body, { childList: true, subtree: true });
+  setInterval(() => {
+    if (calendarMode) updatePastRides();
+  }, 60000);
   reconcile();
 })();

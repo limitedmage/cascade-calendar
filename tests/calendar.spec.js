@@ -209,9 +209,14 @@ test("reuses the loaded first page and requests known remaining pages concurrent
 async function expectReadableCalendar(page, selectors = [".cc-day:not(.cc-outside)", ".cc-outside", ".cc-weekday", ".cc-ride", ".cc-ride-meta", ".cc-button", ".cc-root input", ".cc-today .cc-day-number"]) {
   for (const selector of selectors) {
     const contrast = await page.locator(selector).first().evaluate((node) => {
+      const ride = node.closest(".cc-ride");
+      const opacity = ride ? +getComputedStyle(ride).opacity : 1;
+      const backdrop = ride
+        ? getComputedStyle(ride.parentElement).backgroundColor.match(/[\d.]+/g).slice(0, 3).map(Number)
+        : [0, 0, 0];
       const luminance = (color) => {
-        const channels = color.match(/[\d.]+/g).slice(0, 3).map((value) => {
-          const channel = +value / 255;
+        const channels = color.match(/[\d.]+/g).slice(0, 3).map((value, index) => {
+          const channel = (+value * opacity + backdrop[index] * (1 - opacity)) / 255;
           return channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4;
         });
         return channels[0] * 0.2126 + channels[1] * 0.7152 + channels[2] * 0.0722;
@@ -225,6 +230,66 @@ async function expectReadableCalendar(page, selectors = [".cc-day:not(.cc-outsid
     expect(contrast, `${selector} text contrast`).toBeGreaterThanOrEqual(4.5);
   }
 }
+
+test("fades rides after their start time and updates visible and cached calendars", async ({ page }) => {
+  await page.clock.install({ time: new Date("2026-10-31T14:00:00Z") });
+  const requests = await setup(page, () => ({
+    body: results(
+      card(1, "Yesterday (Moderate)", "2026-10-30")
+      + card(2, "Already started (Steady)", "2026-10-31", "06:59")
+      + card(3, "Starting now (Brisk)", "2026-10-31", "07:00")
+      + card(4, "Upcoming (Leisurely)", "2026-10-31", "07:01"),
+    ),
+  }));
+  await page.goto(`${origin}${route}?f%5B0%5D=event_type%3A21`);
+  await page.getByRole("button", { name: "Show calendar", exact: true }).click();
+  await expect(page.getByRole("status")).toContainText("All results pages included");
+  for (const id of [1, 2]) {
+    await expect(page.locator(`.cc-ride[href$="/${id}"]`)).toHaveCSS("opacity", "0.85");
+  }
+  for (const id of [3, 4]) {
+    await expect(page.locator(`.cc-ride[href$="/${id}"]`)).toHaveCSS("opacity", "1");
+  }
+  const past = page.locator('.cc-ride[href$="/2"]');
+  await past.hover();
+  await expect(past).toHaveCSS("opacity", "1");
+  await page.mouse.move(0, 0);
+  await page.keyboard.press("Tab");
+  await past.focus();
+  await expect(past).toHaveCSS("opacity", "1");
+  await page.locator('.cc-ride[href$="/4"]').focus();
+  await expect(past).toHaveCSS("opacity", "0.85");
+
+  await page.getByRole("button", { name: "Show default list" }).click();
+  await page.clock.setSystemTime(new Date("2026-10-31T14:00:30Z"));
+  const before = requests.length;
+  await page.getByRole("button", { name: "Show calendar", exact: true }).click();
+  await expect(page.getByRole("status")).toContainText("All results pages included");
+  expect(requests.length).toBe(before);
+  await expect(page.locator('.cc-ride[href$="/3"]')).toHaveCSS("opacity", "0.85");
+  await expect(page.locator('.cc-ride[href$="/4"]')).toHaveCSS("opacity", "1");
+  await page.clock.runFor(60000);
+  await expect(page.locator('.cc-ride[href$="/4"]')).toHaveCSS("opacity", "0.85");
+});
+
+test.describe("past rides in another browser timezone", () => {
+  test.use({ timezoneId: "Asia/Tokyo" });
+
+  test("uses each ride's Pacific offset across the daylight saving fallback", async ({ page }) => {
+    await setup(page, () => ({
+      body: results(
+        card(1, "Earlier 1:30 (Moderate)", "2026-11-01", "01:30", "-07:00")
+        + card(2, "Later 1:30 (Moderate)", "2026-11-01", "01:30", "-08:00"),
+      ),
+    }));
+    await page.clock.setFixedTime(new Date("2026-11-01T09:00:00Z"));
+    await page.goto(`${origin}${route}?f%5B0%5D=event_type%3A21&date_from=11%2F01%2F2026&date_to=11%2F30%2F2026`);
+    await page.getByRole("button", { name: "Show calendar", exact: true }).click();
+    await expect(page.getByRole("status")).toContainText("All results pages included");
+    await expect(page.locator('.cc-ride[href$="/1"]')).toHaveCSS("opacity", "0.85");
+    await expect(page.locator('.cc-ride[href$="/2"]')).toHaveCSS("opacity", "1");
+  });
+});
 
 test("responds to Dark Reader's scheme attribute without changing light mode", async ({ page }) => {
   await setup(page);
