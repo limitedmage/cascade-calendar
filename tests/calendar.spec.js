@@ -200,8 +200,8 @@ test("reuses the loaded first page and requests known remaining pages concurrent
   await expect(page.getByRole("status")).toContainText("All results pages included");
 });
 
-async function expectReadableCalendar(page) {
-  for (const selector of [".cc-day:not(.cc-outside)", ".cc-outside", ".cc-weekday", ".cc-ride", ".cc-ride-meta", ".cc-button", ".cc-root input", ".cc-today .cc-day-number"]) {
+async function expectReadableCalendar(page, selectors = [".cc-day:not(.cc-outside)", ".cc-outside", ".cc-weekday", ".cc-ride", ".cc-ride-meta", ".cc-button", ".cc-root input", ".cc-today .cc-day-number"]) {
+  for (const selector of selectors) {
     const contrast = await page.locator(selector).first().evaluate((node) => {
       const luminance = (color) => {
         const channels = color.match(/[\d.]+/g).slice(0, 3).map((value) => {
@@ -257,4 +257,57 @@ test("stays readable with Dark Reader's dynamic rendering engine enabled", async
   await page.screenshot({ path: test.info().outputPath("dark-reader.png") });
   await page.evaluate(() => DarkReader.disable());
   await expect(page.locator(".cc-day:not(.cc-outside)").first()).toHaveCSS("background-color", "rgb(255, 255, 255)");
+});
+
+test("colors rides by their final pace label and keeps every pace readable in Dark Reader", async ({ page }) => {
+  const paces = [
+    ["Easy", "easy", "rgb(220, 87, 148)", "rgb(252, 230, 240)"],
+    ["Leisurely", "leisurely", "rgb(198, 40, 40)", "rgb(253, 231, 231)"],
+    ["Steady", "steady", "rgb(225, 184, 0)", "rgb(255, 245, 204)"],
+    ["Moderate", "moderate", "rgb(36, 107, 60)", "rgb(231, 243, 233)"],
+    ["Brisk", "brisk", "rgb(24, 89, 160)", "rgb(231, 240, 252)"],
+    ["Vigorous", "vigorous", "rgb(107, 51, 149)", "rgb(241, 233, 250)"],
+    ["Strenuous", "strenuous", "rgb(0, 0, 0)", "rgb(236, 238, 239)"],
+    ["Super Strenuous", "strenuous", "rgb(0, 0, 0)", "rgb(236, 238, 239)"],
+    ["Self Paced", "self-paced", "rgb(115, 123, 128)", "rgb(240, 242, 243)"],
+  ];
+  await setup(page, () => ({
+    body: results(
+      paces.map(([label], index) => card(index, `Ride ${index} (${label})`, `2026-10-${20 + index}`)).join("")
+      + card(20, "Social ride (Leisurely-Steady-Moderate-Brisk) (Steady)", "2026-10-31")
+      + card(21, "Easy Street (Self Paced)", "2026-10-31")
+      + card(22, "Brisk wind on the lake", "2026-10-31")
+      + card(23, "Virtual ride (Self-Paced)", "2026-10-31"),
+    ),
+  }));
+  await page.goto(`${origin}${route}?f%5B0%5D=event_type%3A21`);
+  await page.getByRole("button", { name: "Show calendar", exact: true }).click();
+  await expect(page.getByRole("status")).toContainText("All results pages included");
+  for (const [index, [, pace, color, surface]] of paces.entries()) {
+    const ride = page.locator(`.cc-ride[href$="/${index}"]`);
+    await expect(ride).toHaveAttribute("data-pace", pace);
+    await expect(ride).toHaveCSS("border-left-color", color);
+    await expect(ride).toHaveCSS("background-color", surface);
+  }
+  await expect(page.locator('.cc-ride[href$="/20"]')).toHaveAttribute("data-pace", "steady");
+  for (const id of [21, 23]) {
+    await expect(page.locator(`.cc-ride[href$="/${id}"]`)).toHaveAttribute("data-pace", "self-paced");
+  }
+  await expect(page.locator('.cc-ride[href$="/22"]')).not.toHaveAttribute("data-pace");
+  const selectors = [...new Set(paces.map(([, pace]) => pace))]
+    .flatMap((pace) => [`.cc-ride[data-pace="${pace}"]`, `.cc-ride[data-pace="${pace}"] .cc-ride-meta`]);
+  await expectReadableCalendar(page, selectors);
+  await page.screenshot({ path: test.info().outputPath("pace-colors-light.png"), fullPage: true });
+  await page.evaluate(() => document.documentElement.dataset.darkreaderScheme = "dark");
+  await expectReadableCalendar(page, selectors);
+  await page.addScriptTag({ path: require.resolve("darkreader") });
+  await page.evaluate(() => {
+    DarkReader.setFetchMethod(window.fetch);
+    DarkReader.enable({ brightness: 100, contrast: 100, sepia: 0 });
+  });
+  await expect(page.locator("html")).toHaveAttribute("data-darkreader-scheme", "dark");
+  await expectReadableCalendar(page, selectors);
+  await page.locator('.cc-ride[data-pace="steady"]').first().hover();
+  await expectReadableCalendar(page, selectors);
+  await page.screenshot({ path: test.info().outputPath("pace-colors-dark-reader.png"), fullPage: true });
 });

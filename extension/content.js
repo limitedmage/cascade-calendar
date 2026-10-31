@@ -106,9 +106,11 @@
       if (url.origin !== location.origin || !url.pathname.startsWith("/rides-events/")) continue;
       const times = [...card.querySelectorAll("time")].map((node) => node.textContent.trim());
       const metadata = card.lastElementChild?.matches("h3") ? "" : card.lastElementChild?.textContent.replace(/\s+/g, " ").trim();
+      const pace = title.match(/\((easy|leisurely|steady|moderate|brisk|vigorous|(?:super[\s-]+)?strenuous|self[\s-]+paced)\)\s*$/i)?.[1]
+        .toLowerCase().replace(/^super[\s-]+/, "").replace(/^self[\s-]+paced$/, "self-paced");
       rides.push({
         date: start.slice(0, 10), sort: start.slice(11, 16), title, url: url.href,
-        time: times.join(" - "), metadata: metadata || "",
+        time: times.join(" - "), metadata: metadata || "", pace,
       });
     }
     return rides;
@@ -147,6 +149,7 @@
         for (const ride of grouped.get(key) || []) {
           const link = element("a", "cc-ride");
           link.href = ride.url;
+          if (ride.pace) link.dataset.pace = ride.pace;
           link.append(element("span", "cc-ride-time", ride.time.split("•").pop().trim()));
           link.append(element("span", "cc-ride-title", ride.title));
           if (ride.metadata) link.append(element("span", "cc-ride-meta", ride.metadata));

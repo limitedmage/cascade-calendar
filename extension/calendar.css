@@ -76,3 +76,26 @@ html[data-darkreader-scheme="dark"] .cc-root {
 .cc-ride-time { font-size: 11px; }
 .cc-ride-title { font-size: 12px; font-weight: 700; margin: 3px 0; }
 .cc-ride-meta { font-size: 11px; color: var(--cc-muted); }
+
+.cc-root .cc-ride[data-pace] {
+  --cc-ride: var(--cc-pace-surface);
+  --cc-ride-hover: var(--cc-pace-surface);
+  --cc-accent: var(--cc-pace-color);
+}
+.cc-ride[data-pace="easy"] { --cc-pace-color: #dc5794; --cc-pace-surface: #fce6f0; }
+.cc-ride[data-pace="leisurely"] { --cc-pace-color: #c62828; --cc-pace-surface: #fde7e7; }
+.cc-ride[data-pace="steady"] { --cc-pace-color: #e1b800; --cc-pace-surface: #fff5cc; }
+.cc-ride[data-pace="moderate"] { --cc-pace-color: #246b3c; --cc-pace-surface: #e7f3e9; }
+.cc-ride[data-pace="brisk"] { --cc-pace-color: #1859a0; --cc-pace-surface: #e7f0fc; }
+.cc-ride[data-pace="vigorous"] { --cc-pace-color: #6b3395; --cc-pace-surface: #f1e9fa; }
+.cc-ride[data-pace="strenuous"] { --cc-pace-color: #000000; --cc-pace-surface: #eceeef; }
+.cc-ride[data-pace="self-paced"] { --cc-pace-color: #737b80; --cc-pace-surface: #f0f2f3; }
+
+html[data-darkreader-scheme="dark"] .cc-ride[data-pace="easy"] { --cc-pace-color: #f3a6cb; --cc-pace-surface: #33252c; }
+html[data-darkreader-scheme="dark"] .cc-ride[data-pace="leisurely"] { --cc-pace-color: #ff7777; --cc-pace-surface: #352525; }
+html[data-darkreader-scheme="dark"] .cc-ride[data-pace="steady"] { --cc-pace-color: #f5cf3f; --cc-pace-surface: #35311f; }
+html[data-darkreader-scheme="dark"] .cc-ride[data-pace="moderate"] { --cc-pace-color: #8ccda7; --cc-pace-surface: #23352a; }
+html[data-darkreader-scheme="dark"] .cc-ride[data-pace="brisk"] { --cc-pace-color: #83b6ff; --cc-pace-surface: #243040; }
+html[data-darkreader-scheme="dark"] .cc-ride[data-pace="vigorous"] { --cc-pace-color: #c39af0; --cc-pace-surface: #30263b; }
+html[data-darkreader-scheme="dark"] .cc-ride[data-pace="strenuous"] { --cc-pace-color: #000000; --cc-pace-surface: #303433; }
+html[data-darkreader-scheme="dark"] .cc-ride[data-pace="self-paced"] { --cc-pace-color: #a8b0b5; --cc-pace-surface: #2b3033; }
