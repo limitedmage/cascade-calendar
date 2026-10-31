@@ -430,3 +430,35 @@ test("marks cancelled rides while crossing out only their names", async ({ page 
   await page.getByRole("button", { name: "Show default list" }).click();
   await expect(page.locator(`#${resultsId} .card-title`).first()).toHaveCSS("text-decoration-line", "none");
 });
+
+test("sorts same-name rides at the same time by pace across results pages", async ({ page }) => {
+  const ordered = ["Easy", "Leisurely", "Steady", "Moderate", "Brisk", "Vigorous", "Strenuous", "Super Strenuous", "Self Paced"];
+  const shuffled = [...ordered].reverse();
+  const group = shuffled.map((pace, index) => card(index, `Lake Loop (Tour) (${pace})`, "2026-10-31", "10:00"));
+  await setup(page, (url) => ({
+    body: url.searchParams.has("page")
+      ? results(group.slice(4).join(""))
+      : results(
+        group.slice(0, 4).join("")
+        + card(20, "Zebra (Vigorous)", "2026-10-31", "09:00")
+        + card(21, "Alpha (Strenuous)", "2026-10-31", "10:00")
+        + card(22, "Zebra (Easy)", "2026-10-31", "10:00")
+        + card(23, "Lake Loop (Tour) (Easy)", "2026-10-31", "11:00"),
+        `${route}?page=1`,
+      ),
+  }));
+  await page.goto(`${origin}${route}?f%5B0%5D=event_type%3A21`);
+  await page.getByRole("button", { name: "Show calendar", exact: true }).click();
+  await expect(page.getByRole("status")).toContainText("All results pages included");
+  const expected = [
+    "Zebra (Vigorous)",
+    "Alpha (Strenuous)",
+    ...ordered.map((pace) => `Lake Loop (Tour) (${pace})`),
+    "Zebra (Easy)",
+    "Lake Loop (Tour) (Easy)",
+  ];
+  await expect(page.locator('.cc-day[data-date="2026-10-31"] .cc-ride-title')).toHaveText(expected);
+  await page.getByRole("button", { name: "Show default list" }).click();
+  await page.getByRole("button", { name: "Show calendar", exact: true }).click();
+  await expect(page.locator('.cc-day[data-date="2026-10-31"] .cc-ride-title')).toHaveText(expected);
+});

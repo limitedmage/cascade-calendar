@@ -20,6 +20,7 @@
   let month;
   let signature = "";
   const cache = new Map();
+  const PACE_ORDER = ["easy", "leisurely", "steady", "moderate", "brisk", "vigorous", "strenuous", "super-strenuous", "self-paced"];
 
   const element = (tag, className, text) => {
     const node = document.createElement(tag);
@@ -106,13 +107,16 @@
       if (url.origin !== location.origin || !url.pathname.startsWith("/rides-events/")) continue;
       const times = [...card.querySelectorAll("time")].map((node) => node.textContent.trim());
       const metadata = card.lastElementChild?.matches("h3") ? "" : card.lastElementChild?.textContent.replace(/\s+/g, " ").trim();
-      const pace = title.match(/\((easy|leisurely|steady|moderate|brisk|vigorous|(?:super[\s-]+)?strenuous|self[\s-]+paced)\)\s*$/i)?.[1]
-        .toLowerCase().replace(/^super[\s-]+/, "").replace(/^self[\s-]+paced$/, "self-paced");
+      const paceMatch = title.match(/\((easy|leisurely|steady|moderate|brisk|vigorous|(?:super[\s-]+)?strenuous|self[\s-]+paced)\)\s*$/i);
+      const paceName = paceMatch?.[1].toLowerCase().replace(/\s+/g, "-");
+      const pace = paceName === "super-strenuous" ? "strenuous" : paceName;
+      const name = paceMatch ? title.slice(0, paceMatch.index).trim() : title;
+      const paceRank = paceName ? PACE_ORDER.indexOf(paceName) : PACE_ORDER.length;
       const cancelled = /\bcancell?ed\b/i.test(title)
         || [...card.querySelectorAll(".btn-tag")].some((tag) => /\bcancell?ed\b/i.test(tag.textContent));
       rides.push({
         date: start.slice(0, 10), sort: start.slice(11, 16), title, url: url.href,
-        time: times.join(" - "), metadata: metadata || "", pace, cancelled,
+        time: times.join(" - "), metadata: metadata || "", pace, paceRank, name, cancelled,
       });
     }
     return rides;
@@ -129,7 +133,9 @@
     const today = dateKey(pacificToday());
     const count = Math.ceil((first.getDay() + last.getDate()) / 7) * 7;
     const grouped = new Map();
-    for (const ride of rides.sort((a, b) => a.sort.localeCompare(b.sort) || a.title.localeCompare(b.title))) {
+    for (const ride of rides.sort((a, b) =>
+      a.sort.localeCompare(b.sort) || a.name.localeCompare(b.name)
+      || a.paceRank - b.paceRank || a.title.localeCompare(b.title))) {
       if (!grouped.has(ride.date)) grouped.set(ride.date, []);
       grouped.get(ride.date).push(ride);
     }
