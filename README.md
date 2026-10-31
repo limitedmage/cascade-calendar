@@ -4,7 +4,7 @@ A Chrome extension that adds a month calendar to [Cascade's ride search](https:/
 
 ## DISCLAIMER
 
-This is 100% vibe-coded, use at your own risk. 
+This is 100% vibe-coded, use at your own risk. I tested it manually but have not read any of the code.
 
 ## Features
 
