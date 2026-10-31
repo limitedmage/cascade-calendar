@@ -2,11 +2,47 @@
 
 A Chrome extension that adds a month calendar to [Cascade's ride search](https://cascade.org/rides-events/ride-event-search?f%5B0%5D=event_type%3A21).
 
-![Cascade ride calendar showing pace-colored rides, month navigation, and sidebar filters](docs/calendar.png)
-
 ## DISCLAIMER
 
 This is 100% vibe-coded, use at your own risk. 
+
+## Features
+
+### A full month of rides
+
+See the whole month, including rides from every results page. Navigate with the month arrows, Today, or Go to date.
+
+![Full November calendar with rides throughout the month, navigation, and sidebar filters](docs/calendar.png)
+
+### CTS-based pace colors
+
+Softly tinted ride cards and strong left borders use CTS-based pace colors, with the pace name also shown in the title.
+
+![Live ride cards with pink, green, blue, purple, and gray pace colors](docs/pace-colors.png)
+
+### Multi-pace rides sorted by pace
+
+Rides with the same name and start time sort from Easy through Self Paced, rather than alphabetically by the pace label.
+
+![Same-name MUMPS rides ordered Steady, Moderate, then Brisk](docs/pace-order.png)
+
+### Cancelled rides clearly marked
+
+Cancelled rides remain visible with a **CANCELLED** label and their name crossed out.
+
+![Cancelled Cascade ride with only its name crossed out](docs/cancelled-ride.png)
+
+### Filter by pace from the sidebar
+
+Use Cascade's **By Pace** filters on the left to narrow the calendar without losing the month view.
+
+![Moderate pace selected in the sidebar with only Moderate rides in the calendar](docs/pace-filter.png)
+
+### Works with the Dark Reader extension
+
+The calendar adapts automatically to Dark Reader, keeping pace colors, controls, and text readable.
+
+![Live Cascade calendar with Dark Reader enabled](docs/dark-reader.png)
 
 ## Install
 
