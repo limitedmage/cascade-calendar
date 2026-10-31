@@ -77,12 +77,14 @@ html[data-darkreader-scheme="dark"] .cc-root {
 }
 .cc-toolbar > .cc-button { height: 36px; padding-top: 6px; padding-bottom: 6px; }
 .cc-root .cc-button:hover, .cc-root .cc-button[aria-pressed="true"] { background: var(--cc-header); }
-.cc-root .cc-view-toggle { display: flex; align-items: center; width: max-content; height: 36px; margin-left: auto; flex-shrink: 0; padding: 2px; }
+.cc-root .cc-view-toggle { position: relative; display: flex; align-items: center; width: max-content; height: 36px; margin-left: auto; flex-shrink: 0; padding: 4px; }
 /* Match the right edge of Cascade's centered 904px list content. */
 .cc-toolbar .cc-view-toggle { margin-right: max(0px, calc((100% - 904px) / 2)); }
-.cc-view-option { display: flex; align-items: center; justify-content: center; min-width: 84px; height: 100%; padding: 0 12px; border-radius: 4px; color: var(--cc-text); }
+.cc-view-highlight { position: absolute; top: 4px; bottom: 4px; left: 4px; width: calc((100% - 8px) / 2); border-radius: 4px; background: var(--cc-ink); pointer-events: none; }
+.cc-view-toggle[aria-checked="true"] .cc-view-highlight { transform: translateX(100%); }
+.cc-view-option { position: relative; display: flex; flex: 1; align-items: center; justify-content: center; min-width: 84px; height: 100%; padding: 0 12px; color: var(--cc-text); }
 .cc-view-toggle[aria-checked="false"] .cc-view-list,
-.cc-view-toggle[aria-checked="true"] .cc-view-calendar { color: var(--cc-today-text); background: var(--cc-ink); }
+.cc-view-toggle[aria-checked="true"] .cc-view-calendar { color: var(--cc-today-text); }
 .cc-root .cc-month-nav { display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; flex-shrink: 0; }
 .cc-month-nav::before { content: ""; display: block; width: 8px; height: 8px; border: solid currentColor; border-width: 0 2px 2px 0; }
 .cc-month-previous::before { transform: translateX(2px) rotate(135deg); }

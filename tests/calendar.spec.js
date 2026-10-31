@@ -62,17 +62,18 @@ test("defaults to calendar and saves the selected view in local storage across r
   await expect(page.locator(`#${resultsId}`)).toBeHidden();
   await expect(page.locator(".cc-toolbar > :last-child")).toHaveText("ListCalendar");
   await expect(page.getByRole("switch", { name: "Calendar view", exact: true })).toHaveAttribute("aria-checked", "true");
-  await expect(page.locator(".cc-view-calendar")).not.toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
-  const selectedColor = await page.locator(".cc-view-calendar").evaluate((node) => getComputedStyle(node).backgroundColor);
-  await expect(page.locator(".cc-view-list")).not.toHaveCSS("background-color", selectedColor);
+  const highlight = page.locator(".cc-view-highlight");
+  await expect(highlight).not.toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+  const selectedColor = await highlight.evaluate((node) => getComputedStyle(node).backgroundColor);
+  expect((await highlight.boundingBox()).x).toBeCloseTo((await page.locator(".cc-view-calendar").boundingBox()).x, 1);
   await page.getByRole("switch", { name: "Calendar view", exact: true }).click();
   expect(await page.evaluate(() => localStorage.getItem("cascade-calendar-view"))).toBe("list");
   expect(await page.evaluate(() => sessionStorage.getItem("cascade-calendar-view"))).toBeNull();
   await page.reload();
   await expect(page.locator(`#${resultsId}`)).toBeVisible();
   await expect(page.getByRole("switch", { name: "Calendar view", exact: true })).toHaveAttribute("aria-checked", "false");
-  await expect(page.locator(".cc-view-list")).toHaveCSS("background-color", selectedColor);
-  await expect(page.locator(".cc-view-calendar")).not.toHaveCSS("background-color", selectedColor);
+  await expect(highlight).toHaveCSS("background-color", selectedColor);
+  expect((await highlight.boundingBox()).x).toBeCloseTo((await page.locator(".cc-view-list").boundingBox()).x, 1);
   expect(await page.getByRole("switch").evaluate((node) =>
     Math.abs(node.getBoundingClientRect().right - (node.closest(".cc-toolbar") || node.closest(".cc-root")).getBoundingClientRect().right))).toBeLessThan(1);
   const other = await context.newPage();
@@ -85,6 +86,68 @@ test("defaults to calendar and saves the selected view in local storage across r
   await page.reload();
   await expect(page.locator("#cc-calendar-panel")).toBeVisible();
   await expect(page.locator(`#${resultsId}`)).toBeHidden();
+});
+
+test("slides the view highlight in both directions and reverses without jumping", async ({ page }) => {
+  await setup(page);
+  await page.goto(`${origin}${route}`);
+  const toggle = page.getByRole("switch", { name: "Calendar view", exact: true });
+  await expect(page.locator(".cc-view-highlight")).toHaveCSS("position", "absolute");
+  for (const enabled of [true, false]) {
+    const positions = await toggle.evaluate((node) => {
+      node.click();
+      const highlight = node.querySelector(".cc-view-highlight");
+      const animation = highlight.getAnimations()[0];
+      animation.pause();
+      animation.currentTime = animation.effect.getTiming().duration / 2;
+      const middle = highlight.getBoundingClientRect().x;
+      animation.finish();
+      return {
+        middle,
+        end: highlight.getBoundingClientRect().x,
+        list: node.querySelector(".cc-view-list").getBoundingClientRect().x,
+        calendar: node.querySelector(".cc-view-calendar").getBoundingClientRect().x,
+      };
+    });
+    expect(positions.middle).toBeGreaterThan(positions.list);
+    expect(positions.middle).toBeLessThan(positions.calendar);
+    expect(positions.end).toBeCloseTo(enabled ? positions.calendar : positions.list, 1);
+    await expect(toggle).toHaveAttribute("aria-checked", String(enabled));
+  }
+  const reversal = await toggle.evaluate((node) => {
+    const highlight = node.querySelector(".cc-view-highlight");
+    node.click();
+    const first = highlight.getAnimations()[0];
+    first.pause();
+    first.currentTime = first.effect.getTiming().duration / 2;
+    const before = getComputedStyle(highlight).transform;
+    node.click();
+    const second = highlight.getAnimations()[0];
+    second.pause();
+    second.currentTime = 0;
+    const after = getComputedStyle(highlight).transform;
+    second.finish();
+    return { before, after };
+  });
+  expect(reversal.after).toBe(reversal.before);
+  await expect(toggle).toHaveAttribute("aria-checked", "false");
+});
+
+test("switches views without animation when reduced motion is requested", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await setup(page, undefined, null);
+  await page.goto(`${origin}${route}`);
+  const toggle = page.getByRole("switch", { name: "Calendar view", exact: true });
+  const highlight = page.locator(".cc-view-highlight");
+  await expect(highlight).toHaveCSS("position", "absolute");
+  expect(await highlight.evaluate((node) => node.getAnimations().length)).toBe(0);
+  for (const enabled of [false, true]) {
+    await toggle.click();
+    expect(await highlight.evaluate((node) => node.getAnimations().length)).toBe(0);
+    expect((await highlight.boundingBox()).x).toBeCloseTo(
+      (await page.locator(enabled ? ".cc-view-calendar" : ".cc-view-list").boundingBox()).x, 1);
+    await expect(toggle).toHaveAttribute("aria-checked", String(enabled));
+  }
 });
 
 test("toggles original list and loads every page with safe links and Pacific dates", async ({ page }) => {
@@ -324,6 +387,9 @@ test("reuses the loaded first page and requests known remaining pages concurrent
 });
 
 async function expectReadableCalendar(page, selectors = [".cc-day:not(.cc-outside)", ".cc-outside", ".cc-weekday", ".cc-ride", ".cc-ride-meta", ".cc-button", ".cc-root input", ".cc-today .cc-day-number", ".cc-view-list", ".cc-view-calendar"]) {
+  await page.locator(".cc-view-highlight").evaluate(async (node) => {
+    await Promise.all(node.getAnimations().map((animation) => animation.finished.catch(() => {})));
+  });
   for (const selector of selectors) {
     const contrast = await page.locator(selector).first().evaluate((node) => {
       const ride = node.closest(".cc-ride");
@@ -339,6 +405,13 @@ async function expectReadableCalendar(page, selectors = [".cc-day:not(.cc-outsid
         return channels[0] * 0.2126 + channels[1] * 0.7152 + channels[2] * 0.0722;
       };
       let background = node;
+      if (node.matches(".cc-view-option")) {
+        const highlight = node.parentElement.querySelector(".cc-view-highlight");
+        const rect = highlight.getBoundingClientRect();
+        const label = node.getBoundingClientRect();
+        const center = label.x + label.width / 2;
+        if (center >= rect.left && center <= rect.right) background = highlight;
+      }
       while (getComputedStyle(background).backgroundColor === "rgba(0, 0, 0, 0)") background = background.parentElement;
       const foreground = luminance(getComputedStyle(node).color);
       const surface = luminance(getComputedStyle(background).backgroundColor);

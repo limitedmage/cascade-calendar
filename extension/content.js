@@ -327,7 +327,16 @@
     host = element("div", "cc-root");
     host.id = "cascade-ride-calendar";
     toggle = button("", "Calendar view", () => {
+      const highlight = toggle.querySelector(".cc-view-highlight");
+      const from = getComputedStyle(highlight).transform;
+      highlight.getAnimations().forEach((animation) => animation.cancel());
       setMode(!calendarMode);
+      if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+        highlight.animate([
+          { transform: from },
+          { transform: getComputedStyle(highlight).transform },
+        ], { duration: 180, easing: "ease-out" });
+      }
       try {
         localStorage.setItem(PREFERENCE, calendarMode ? "calendar" : "list");
       } catch {}
@@ -335,11 +344,13 @@
     toggle.classList.add("cc-view-toggle");
     toggle.setAttribute("role", "switch");
     toggle.setAttribute("aria-controls", "cc-calendar-panel");
+    const highlight = element("span", "cc-view-highlight");
+    highlight.setAttribute("aria-hidden", "true");
     const listOption = element("span", "cc-view-option cc-view-list", "List");
     const calendarOption = element("span", "cc-view-option cc-view-calendar", "Calendar");
     listOption.setAttribute("aria-hidden", "true");
     calendarOption.setAttribute("aria-hidden", "true");
-    toggle.append(listOption, calendarOption);
+    toggle.append(highlight, listOption, calendarOption);
     panel = element("section", "cc-panel");
     panel.id = "cc-calendar-panel";
     panel.setAttribute("aria-label", "Free group ride calendar");
