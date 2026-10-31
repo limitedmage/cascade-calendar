@@ -82,7 +82,7 @@ html[data-darkreader-scheme="dark"] .cc-root {
 .cc-root :focus-visible { outline: 3px solid var(--cc-focus); outline-offset: 3px; }
 .cc-root .cc-heading { font: 700 22px/1.3 system-ui, sans-serif; color: var(--cc-text); margin: 0; }
 .cc-jump { display: flex; gap: 6px; align-items: center; white-space: nowrap; flex-shrink: 0; }
-.cc-root input { font: inherit; color: var(--cc-ink); padding: 6px; border: 1px solid var(--cc-border); border-radius: 4px; background: var(--cc-surface); width: auto; }
+.cc-root .cc-jump input[type="date"] { box-sizing: border-box; font: inherit; line-height: normal; color: var(--cc-ink); height: 36px; min-height: 0; padding: 4px 6px; border: 1px solid var(--cc-border); border-radius: 4px; background: var(--cc-surface); width: auto; }
 .cc-root .cc-status, .cc-root .cc-help { margin: 12px 0; font: inherit; }
 .cc-root .cc-help { color: var(--cc-muted); }
 .cc-retry { margin-bottom: 12px; }

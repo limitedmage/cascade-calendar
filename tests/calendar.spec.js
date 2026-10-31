@@ -462,3 +462,22 @@ test("sorts same-name rides at the same time by pace across results pages", asyn
   await page.getByRole("button", { name: "Show calendar", exact: true }).click();
   await expect(page.locator('.cc-day[data-date="2026-10-31"] .cc-ride-title')).toHaveText(expected);
 });
+
+test("keeps the date input compact despite Cascade's form-control styles", async ({ page }) => {
+  await setup(page);
+  await page.goto(`${origin}${route}?f%5B0%5D=event_type%3A21`);
+  await page.addStyleTag({ content: `input[type="date"] { height: 48px; min-height: 48px; font: 16px/24px sans-serif; padding: 10px; }` });
+  await page.getByRole("button", { name: "Show calendar", exact: true }).click();
+  const date = page.getByLabel("Go to date", { exact: false });
+  await expect(date).toHaveCSS("height", "36px");
+  await expect(date).toHaveCSS("font-size", "14px");
+  await page.addScriptTag({ path: require.resolve("darkreader") });
+  await page.evaluate(() => {
+    DarkReader.setFetchMethod(window.fetch);
+    DarkReader.enable({ brightness: 100, contrast: 100, sepia: 0 });
+  });
+  await expect(page.locator("html")).toHaveAttribute("data-darkreader-scheme", "dark");
+  await expect(date).toHaveCSS("height", "36px");
+  await date.fill("2026-11-15");
+  await expect(page.locator(".cc-heading")).toHaveText("November 2026");
+});
