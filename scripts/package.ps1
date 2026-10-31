@@ -4,8 +4,7 @@ $extension = Join-Path $root "extension"
 $manifest = Get-Content (Join-Path $extension "manifest.json") -Raw | ConvertFrom-Json
 $output = Join-Path $root "dist"
 New-Item -ItemType Directory -Path $output -Force | Out-Null
-$license = Join-Path $output "LICENSE"
-Invoke-WebRequest -Uri "https://www.gnu.org/licenses/gpl-3.0.txt" -OutFile $license -TimeoutSec 30
+$license = Join-Path $root "LICENSE.md"
 $zip = Join-Path $output "cascade-calendar-$($manifest.version).zip"
 Compress-Archive -Path @((Join-Path $extension "*"), $license) -DestinationPath $zip -Force
 
@@ -15,8 +14,8 @@ try {
     if (-not ($archive.Entries | Where-Object { $_.FullName -eq "manifest.json" })) {
         throw "The ZIP must contain manifest.json at its root."
     }
-    if (-not ($archive.Entries | Where-Object { $_.FullName -eq "LICENSE" })) {
-        throw "The ZIP must include the full GPLv3 license."
+    if (-not ($archive.Entries | Where-Object { $_.FullName -eq "LICENSE.md" })) {
+        throw "The ZIP must include the MIT license."
     }
 } finally {
     $archive.Dispose()

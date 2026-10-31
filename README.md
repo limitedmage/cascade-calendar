@@ -106,6 +106,10 @@ npm test
 
 Playwright's browser timezone is `America/Los_Angeles` (PST/PDT). Tests use local responses modeled on the live site's Drupal markup. The live page was explored with Playwright to verify card selectors, ISO timestamps, date-filter format, and pagination. A future Cascade redesign may require updating these selectors.
 
+## Privacy
+
+See the [privacy policy](PRIVACY.md) for the extension's data handling, Cascade requests, local preference storage, and removal instructions. No user data is sent to the developer.
+
 ## Chrome Web Store
 
 See the [submission guide and listing text](store/listing.md). Build the upload ZIP with `./scripts/package.ps1`. Store-sized screenshots are in `store`; the original calendar-and-bike icon is in `assets/icon.svg`, with PNGs bundled in `extension/icons`.
@@ -124,7 +128,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup, testing, and pull 
 
 ## License
 
-The project's original code and artwork are licensed under [GNU GPLv3-only](https://www.gnu.org/licenses/gpl-3.0.html) (`GPL-3.0-only`). Commercial use is permitted; distributed derivatives must comply with GPLv3, including its corresponding-source requirements.
+The project's original code and artwork are licensed under the [MIT License](LICENSE.md). You may use, modify, redistribute, and sell them, including in closed-source projects, provided you preserve the copyright and license notices.
 
 Third-party names, logos, and Cascade ride content are not relicensed by this project.
 

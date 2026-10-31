@@ -4,7 +4,7 @@
 
 Run `./scripts/package.ps1` from the repository root. Upload the generated `dist/cascade-calendar-1.0.0.zip` at https://chrome.google.com/webstore/devconsole.
 
-The ZIP contains the `extension` folder's contents plus the full GPLv3 license, downloaded from GNU by the package script. Development scripts, dependencies, screenshots, and documentation are not bundled. The extension is GPLv3-only (`GPL-3.0-only`).
+The ZIP contains the `extension` folder's contents plus the repository's `LICENSE.md`. Development scripts, dependencies, screenshots, and other documentation are not bundled. The project's original code and artwork are MIT-licensed; the bundled Framework7 icons retain their MIT attribution.
 
 When uploading a replacement ZIP, the manifest version must be higher than the last version uploaded. Listing-only changes do not require a new ZIP. The package script uses `extension/manifest.json`'s version in the ZIP filename.
 
@@ -47,7 +47,11 @@ This is an unofficial community project, not affiliated with or endorsed by Casc
 
 Review these disclosures against the actual extension and the current dashboard before submitting. Chrome treats locally processed website content and form information as data handling; do not claim that the extension handles no data.
 
-No privacy policy is included in this repository. Google's [User Data FAQ](https://developer.chrome.com/docs/webstore/program-policies/user-data-faq) requires a policy for extensions that handle data, including locally processed website content. Resolve this requirement before submitting.
+The [privacy policy](../PRIVACY.md) describes local processing, requests to Cascade, preference storage, and removal. Google's [User Data FAQ](https://developer.chrome.com/docs/webstore/program-policies/user-data-faq) requires a policy even for locally processed website content.
+
+**Privacy policy URL:** https://github.com/limitedmage/cascade-calendar/blob/main/PRIVACY.md
+
+Enter this publicly accessible URL in the Chrome Web Store Developer Dashboard's privacy policy field. Keep the policy, listing disclosures, and dashboard answers consistent with the extension's actual behavior.
 
 **Single purpose:** Adds a filterable monthly calendar to Cascade Bicycle Club's free group ride search.
 

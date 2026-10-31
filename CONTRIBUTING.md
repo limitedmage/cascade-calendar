@@ -78,7 +78,7 @@ Build the extension upload ZIP with:
 ./scripts/package.ps1
 ```
 
-The ZIP is created in `dist`, which is ignored by Git. Packaging requires internet access to download and bundle the official GPLv3 text. Do not commit `node_modules`, test output, or ZIPs. Version changes and Chrome Web Store submissions are handled by the maintainer; discuss them before including them in a pull request.
+The ZIP is created in `dist`, which is ignored by Git. Do not commit `node_modules`, test output, or ZIPs. Version changes and Chrome Web Store submissions are handled by the maintainer; discuss them before including them in a pull request.
 
 ## Submit a pull request
 
@@ -88,6 +88,6 @@ AI-assisted contributions are welcome, but contributors should review and unders
 
 ## Licensing
 
-Contributions to the project's original code and artwork are submitted under **GPLv3-only (`GPL-3.0-only`)**; the [full license text is on GNU's website](https://www.gnu.org/licenses/gpl-3.0.html). Contributors retain copyright in their work; no copyright assignment is required.
+Contributions to the project's original code and artwork are submitted under the [MIT License](LICENSE.md). Contributors retain copyright in their work; no copyright assignment is required.
 
 Only submit work you have permission to contribute under these terms. Third-party names, logos, and Cascade ride content are not relicensed by this project.

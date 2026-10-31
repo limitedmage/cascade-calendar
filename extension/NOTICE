@@ -1,17 +1,8 @@
 Cascade Ride Calendar
 Copyright (C) 2026 Cascade Ride Calendar contributors
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, version 3 of the License.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-GNU General Public License for more details.
-
-A copy of the GNU General Public License is included in LICENSE.
-It is also available at https://www.gnu.org/licenses/gpl-3.0.html.
+The project's original code and artwork are licensed under the MIT License.
+The full terms are in LICENSE.md at the repository root and in packaged ZIPs.
 
 The extension's JavaScript and CSS are distributed as editable source.
 The project source, original artwork, and development tools are available at:
