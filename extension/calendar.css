@@ -73,9 +73,12 @@ html[data-darkreader-scheme="dark"] .cc-root {
   padding: 8px 12px;
   cursor: pointer;
 }
+.cc-toolbar > .cc-button { height: 36px; padding-top: 7px; padding-bottom: 7px; }
 .cc-root .cc-button:hover, .cc-root .cc-button[aria-pressed="true"] { background: var(--cc-header); }
 .cc-root .cc-view-toggle { display: flex; align-items: center; width: max-content; height: 36px; margin-left: auto; flex-shrink: 0; padding: 3px; border: 1px solid var(--cc-border); border-radius: 18px; background: var(--cc-header); }
 .cc-root .cc-view-toggle:hover { background: var(--cc-header); }
+/* Match the right edge of Cascade's centered 904px list content. */
+.cc-toolbar .cc-view-toggle { margin-right: max(0px, calc((100% - 904px) / 2)); }
 .cc-view-option { display: flex; align-items: center; justify-content: center; min-width: 84px; height: 100%; padding: 0 12px; border-radius: 14px; color: var(--cc-text); }
 .cc-view-toggle[aria-checked="false"] .cc-view-list,
 .cc-view-toggle[aria-checked="true"] .cc-view-calendar { color: var(--cc-today-text); background: var(--cc-ink); }

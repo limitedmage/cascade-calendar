@@ -65,8 +65,6 @@ test("defaults to calendar and saves the selected view in local storage across r
   await expect(page.locator(".cc-view-calendar")).not.toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
   const selectedColor = await page.locator(".cc-view-calendar").evaluate((node) => getComputedStyle(node).backgroundColor);
   await expect(page.locator(".cc-view-list")).not.toHaveCSS("background-color", selectedColor);
-  expect(await page.getByRole("switch").evaluate((node) =>
-    Math.abs(node.getBoundingClientRect().right - node.closest(".cc-root").getBoundingClientRect().right))).toBeLessThan(1);
   await page.getByRole("switch", { name: "Calendar view", exact: true }).click();
   expect(await page.evaluate(() => localStorage.getItem("cascade-calendar-view"))).toBe("list");
   expect(await page.evaluate(() => sessionStorage.getItem("cascade-calendar-view"))).toBeNull();
@@ -76,7 +74,7 @@ test("defaults to calendar and saves the selected view in local storage across r
   await expect(page.locator(".cc-view-list")).toHaveCSS("background-color", selectedColor);
   await expect(page.locator(".cc-view-calendar")).not.toHaveCSS("background-color", selectedColor);
   expect(await page.getByRole("switch").evaluate((node) =>
-    Math.abs(node.getBoundingClientRect().right - node.closest(".cc-root").getBoundingClientRect().right))).toBeLessThan(1);
+    Math.abs(node.getBoundingClientRect().right - (node.closest(".cc-toolbar") || node.closest(".cc-root")).getBoundingClientRect().right))).toBeLessThan(1);
   const other = await context.newPage();
   await setup(other, undefined, null);
   await other.goto(`${origin}${route}`);
@@ -534,16 +532,33 @@ test("widens only the calendar layout, retains sidebar width, and restores the l
   const content = page.locator(".layout__region--main");
   const width = (node) => node.evaluate((element) => element.getBoundingClientRect().width);
   const original = await width(content);
+  const toggle = page.getByRole("switch", { name: "Calendar view", exact: true });
+  const listPosition = await toggle.boundingBox();
   await expect(layout).toHaveCSS("width", "1280px");
   await page.getByRole("switch", { name: "Calendar view", exact: true }).click();
   await expect(layout).toHaveCSS("width", "1920px");
   expect(await width(content)).toBeGreaterThan(original + 500);
+  const calendarPosition = await toggle.boundingBox();
+  expect(calendarPosition.x).toBeCloseTo(listPosition.x, 1);
+  expect(calendarPosition.y).toBeCloseTo(listPosition.y, 1);
+  await expect(page.locator(".cc-toolbar")).toHaveCSS("width", `${await width(content)}px`);
+  const monthPosition = await page.getByRole("button", { name: "Previous month", exact: true }).boundingBox();
+  const gridPosition = await page.locator(".cc-scroll").boundingBox();
+  expect(monthPosition.x).toBeCloseTo(gridPosition.x, 1);
+  expect(await width(page.locator(".cc-scroll"))).toBeGreaterThan(original + 500);
   await expect(page.locator("aside")).toHaveCSS("width", "280px");
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await page.getByRole("switch", { name: "Calendar view", exact: true }).click();
   await expect(layout).toHaveCSS("width", "1280px");
   expect(await width(content)).toBe(original);
   await page.getByRole("switch", { name: "Calendar view", exact: true }).click();
+  await page.setViewportSize({ width: 1440, height: 1080 });
+  const resizedCalendarPosition = await toggle.boundingBox();
+  await toggle.click();
+  const resizedListPosition = await toggle.boundingBox();
+  expect(resizedCalendarPosition.x).toBeCloseTo(resizedListPosition.x, 1);
+  expect(resizedCalendarPosition.y).toBeCloseTo(resizedListPosition.y, 1);
+  await toggle.click();
   await page.setViewportSize({ width: 390, height: 844 });
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   expect(await page.locator(".cc-scroll").evaluate((node) => node.scrollWidth > node.clientWidth)).toBe(true);

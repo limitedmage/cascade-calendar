@@ -52,7 +52,7 @@ The calendar adapts automatically to Dark Reader, keeping pace colors, controls,
 
 Use **Previous**, **Next**, **Today**, or **Go to date** to navigate. Navigation reloads the page with the sidebar's From/To filters set to the selected month, retaining search, pace, terrain, and other filters. The **List / Calendar** toggle at the top right highlights the selected view and switches between the calendar and Cascade's original list. The choice is saved in Cascade's local storage across reloads and tabs; calendar is the default until you choose otherwise.
 
-Calendar mode uses the full available page width on desktop, with a compact filter sidebar. Switching back to the list restores Cascade's original page width and layout.
+Calendar mode uses the full available page width on desktop, with a compact filter sidebar. Month controls stay aligned with the calendar's left edge, while the view toggle stays anchored to the list-mode content's right edge to avoid jumping when switching. Switching back to the list restores Cascade's original page width and layout.
 
 The calendar fetches all pages for the displayed month, not just the visible list page. Days expand to show every ride by default. Use the expand/collapse icon next to **Go to date** to switch to compact, 220px-tall days with internal scrolling. This preference is saved in Cascade's local storage across page reloads and tabs. On small screens, scroll the calendar horizontally. Existing date filters narrow the initial month; apply sidebar filters using Cascade's Search button. Calendar requests select Free Group Ride (`event_type:21`), including virtual rides returned under that type. Times use Cascade's Pacific wall-clock dates, regardless of your computer's timezone.
 
