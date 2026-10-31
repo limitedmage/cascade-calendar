@@ -1,0 +1,14 @@
+{
+  "manifest_version": 3,
+  "name": "Cascade Ride Calendar",
+  "version": "1.0.0",
+  "description": "Switch Cascade Bicycle Club's free group ride search between list and calendar views.",
+  "content_scripts": [
+    {
+      "matches": ["https://cascade.org/rides-events/ride-event-search*"],
+      "js": ["content.js"],
+      "css": ["calendar.css"],
+      "run_at": "document_idle"
+    }
+  ]
+}
