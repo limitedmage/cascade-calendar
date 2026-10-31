@@ -78,3 +78,11 @@ npm test
 ```
 
 Playwright's browser timezone is `America/Los_Angeles` (PST/PDT). Tests use local responses modeled on the live site's Drupal markup. The live page was explored with Playwright to verify card selectors, ISO timestamps, date-filter format, and pagination. A future Cascade redesign may require updating these selectors.
+
+## Chrome Web Store
+
+See the [submission guide and listing text](store/listing.md) and [privacy policy](docs/privacy.md). Build the upload ZIP with `.\scripts\package.ps1`. Store-sized screenshots are in `store`; the original calendar-and-bike icon is in `assets\icon.svg`, with PNGs bundled in `extension\icons`.
+
+To regenerate the icon PNGs after changing the SVG, run `node .\scripts\generate-icons.js`.
+
+To regenerate store-sized images from the README's live screenshots, run `node .\scripts\generate-store-images.js`.
