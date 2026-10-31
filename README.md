@@ -86,3 +86,13 @@ See the [submission guide and listing text](store/listing.md). Build the upload 
 To regenerate the icon PNGs after changing the SVG, run `node .\scripts\generate-icons.js`.
 
 To regenerate store-sized images from the README's live screenshots, run `node .\scripts\generate-store-images.js`.
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup, testing, and pull request guidelines.
+
+## License
+
+The project's original code and artwork are licensed under [GNU GPLv3-only](https://www.gnu.org/licenses/gpl-3.0.html) (`GPL-3.0-only`). Commercial use is permitted; distributed derivatives must comply with GPLv3, including its corresponding-source requirements.
+
+Third-party names, logos, and Cascade ride content are not relicensed by this project.

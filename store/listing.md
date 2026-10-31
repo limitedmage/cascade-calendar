@@ -4,7 +4,7 @@
 
 Run `.\scripts\package.ps1` from the repository root. Upload the generated `dist\cascade-calendar-1.0.0.zip` at https://chrome.google.com/webstore/devconsole.
 
-Only the `extension` folder belongs in the ZIP. Development scripts, dependencies, screenshots, and documentation are not bundled.
+The ZIP contains the `extension` folder's contents plus the full GPLv3 license, downloaded from GNU by the package script. Development scripts, dependencies, screenshots, and documentation are not bundled. The extension is GPLv3-only (`GPL-3.0-only`).
 
 ## Listing fields
 
