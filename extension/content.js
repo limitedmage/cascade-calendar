@@ -297,10 +297,16 @@
     panel.setAttribute("aria-label", "Free group ride calendar");
     const toolbar = element("div", "cc-toolbar");
     const heading = element("h2", "cc-heading", month.toLocaleDateString("en-US", { month: "long", year: "numeric" }));
+    const previous = button("", "Previous month", () => navigate(new Date(month.getFullYear(), month.getMonth() - 1, 1)));
+    previous.classList.add("cc-month-nav", "cc-month-previous");
+    previous.title = "Previous month";
+    const next = button("", "Next month", () => navigate(new Date(month.getFullYear(), month.getMonth() + 1, 1)));
+    next.classList.add("cc-month-nav", "cc-month-next");
+    next.title = "Next month";
     toolbar.append(
-      button("Previous", "Previous month", () => navigate(new Date(month.getFullYear(), month.getMonth() - 1, 1))),
+      previous,
       heading,
-      button("Next", "Next month", () => navigate(new Date(month.getFullYear(), month.getMonth() + 1, 1))),
+      next,
       button("Today", "Go to current month", () => navigate(pacificToday())),
     );
     const label = element("label", "cc-jump", "Go to date ");

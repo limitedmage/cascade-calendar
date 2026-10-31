@@ -356,3 +356,34 @@ test("widens only the calendar layout, retains sidebar width, and restores the l
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   expect(await page.locator(".cc-scroll").evaluate((node) => node.scrollWidth > node.clientWidth)).toBe(true);
 });
+
+test("uses accessible month icons and keeps the date control together on narrow screens", async ({ page }) => {
+  await setup(page);
+  await page.setViewportSize({ width: 320, height: 844 });
+  await page.goto(`${origin}${route}?f%5B0%5D=event_type%3A21`);
+  await page.getByRole("button", { name: "Show calendar", exact: true }).click();
+  const previous = page.getByRole("button", { name: "Previous month", exact: true });
+  const next = page.getByRole("button", { name: "Next month", exact: true });
+  await expect(previous).toHaveText("");
+  await expect(next).toHaveText("");
+  await expect(previous).toHaveAccessibleName("Previous month");
+  await expect(next).toHaveAccessibleName("Next month");
+  const dateLayout = await page.locator(".cc-jump").evaluate((label) => {
+    const range = document.createRange();
+    range.selectNodeContents(label.firstChild);
+    const rects = [...range.getClientRects()];
+    const input = label.querySelector("input").getBoundingClientRect();
+    return {
+      lines: rects.length,
+      centerOffset: Math.abs(rects[0].y + rects[0].height / 2 - input.y - input.height / 2),
+      fits: label.getBoundingClientRect().right <= innerWidth,
+    };
+  });
+  expect(dateLayout.lines).toBe(1);
+  expect(dateLayout.centerOffset).toBeLessThan(4);
+  expect(dateLayout.fits).toBe(true);
+  await next.focus();
+  await page.keyboard.press("Enter");
+  await expect(page.locator(".cc-heading")).toHaveText("November 2026");
+  await page.screenshot({ path: test.info().outputPath("mobile-toolbar.png") });
+});
