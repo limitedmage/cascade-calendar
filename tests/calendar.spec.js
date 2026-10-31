@@ -245,7 +245,7 @@ test("fades rides after their start time and updates visible and cached calendar
   await page.getByRole("button", { name: "Show calendar", exact: true }).click();
   await expect(page.getByRole("status")).toContainText("All results pages included");
   for (const id of [1, 2]) {
-    await expect(page.locator(`.cc-ride[href$="/${id}"]`)).toHaveCSS("opacity", "0.85");
+    await expect(page.locator(`.cc-ride[href$="/${id}"]`)).toHaveCSS("opacity", "0.6");
   }
   for (const id of [3, 4]) {
     await expect(page.locator(`.cc-ride[href$="/${id}"]`)).toHaveCSS("opacity", "1");
@@ -257,8 +257,9 @@ test("fades rides after their start time and updates visible and cached calendar
   await page.keyboard.press("Tab");
   await past.focus();
   await expect(past).toHaveCSS("opacity", "1");
+  await expectReadableCalendar(page, ['.cc-ride[href$="/2"]', '.cc-ride[href$="/2"] .cc-ride-meta']);
   await page.locator('.cc-ride[href$="/4"]').focus();
-  await expect(past).toHaveCSS("opacity", "0.85");
+  await expect(past).toHaveCSS("opacity", "0.6");
 
   await page.getByRole("button", { name: "Show default list" }).click();
   await page.clock.setSystemTime(new Date("2026-10-31T14:00:30Z"));
@@ -266,10 +267,10 @@ test("fades rides after their start time and updates visible and cached calendar
   await page.getByRole("button", { name: "Show calendar", exact: true }).click();
   await expect(page.getByRole("status")).toContainText("All results pages included");
   expect(requests.length).toBe(before);
-  await expect(page.locator('.cc-ride[href$="/3"]')).toHaveCSS("opacity", "0.85");
+  await expect(page.locator('.cc-ride[href$="/3"]')).toHaveCSS("opacity", "0.6");
   await expect(page.locator('.cc-ride[href$="/4"]')).toHaveCSS("opacity", "1");
   await page.clock.runFor(60000);
-  await expect(page.locator('.cc-ride[href$="/4"]')).toHaveCSS("opacity", "0.85");
+  await expect(page.locator('.cc-ride[href$="/4"]')).toHaveCSS("opacity", "0.6");
 });
 
 test.describe("past rides in another browser timezone", () => {
@@ -286,7 +287,7 @@ test.describe("past rides in another browser timezone", () => {
     await page.goto(`${origin}${route}?f%5B0%5D=event_type%3A21&date_from=11%2F01%2F2026&date_to=11%2F30%2F2026`);
     await page.getByRole("button", { name: "Show calendar", exact: true }).click();
     await expect(page.getByRole("status")).toContainText("All results pages included");
-    await expect(page.locator('.cc-ride[href$="/1"]')).toHaveCSS("opacity", "0.85");
+    await expect(page.locator('.cc-ride[href$="/1"]')).toHaveCSS("opacity", "0.6");
     await expect(page.locator('.cc-ride[href$="/2"]')).toHaveCSS("opacity", "1");
   });
 });
@@ -330,7 +331,7 @@ test("stays readable with Dark Reader's dynamic rendering engine enabled", async
   await expect(page.locator(".cc-day:not(.cc-outside)").first()).toHaveCSS("background-color", "rgb(255, 255, 255)");
 });
 
-test("colors rides by their final pace label and keeps every pace readable in Dark Reader", async ({ page }) => {
+test("colors rides by their final pace label and keeps upcoming rides readable in Dark Reader", async ({ page }) => {
   const paces = [
     ["Easy", "easy", "rgb(220, 87, 148)", "rgb(252, 230, 240)"],
     ["Leisurely", "leisurely", "rgb(198, 40, 40)", "rgb(253, 231, 231)"],
@@ -351,6 +352,7 @@ test("colors rides by their final pace label and keeps every pace readable in Da
       + card(23, "Virtual ride (Self-Paced)", "2026-10-31"),
     ),
   }));
+  await page.clock.setFixedTime(new Date("2026-10-01T14:00:00Z"));
   await page.goto(`${origin}${route}?f%5B0%5D=event_type%3A21`);
   await page.getByRole("button", { name: "Show calendar", exact: true }).click();
   await expect(page.getByRole("status")).toContainText("All results pages included");

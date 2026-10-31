@@ -68,7 +68,7 @@ Rides sort by start time, then name (excluding the final pace label). Same-name 
 
 Cancelled rides have their name crossed out and a separate **CANCELLED** label. Their time, details, pace colors, and link remain available. Cancellation is detected from Cascade's status tags or a cancellation marker in the ride title.
 
-Rides become slightly transparent after their start time, checked every minute using Cascade's timestamp offsets. Hovering or keyboard-focusing a past ride restores full opacity.
+Rides display at 60% opacity after their start time, checked every minute using Cascade's timestamp offsets. Past rides intentionally have reduced text contrast; hovering or keyboard-focusing one restores full opacity.
 
 ## Development
 
