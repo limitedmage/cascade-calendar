@@ -25,6 +25,7 @@
 .cc-root {
   --cc-ink: #00495e;
   --cc-border: #cbd9d6;
+  --cc-control-border: #64817a;
   --cc-text: #183c36;
   --cc-muted: #52655f;
   --cc-surface: #ffffff;
@@ -46,6 +47,7 @@
 html[data-darkreader-scheme="dark"] .cc-root {
   --cc-ink: #a6dfed;
   --cc-border: #435953;
+  --cc-control-border: #6e8d80;
   --cc-text: #e0ece7;
   --cc-muted: #b0c6bc;
   --cc-surface: #1c2723;
@@ -73,13 +75,12 @@ html[data-darkreader-scheme="dark"] .cc-root {
   padding: 8px 12px;
   cursor: pointer;
 }
-.cc-toolbar > .cc-button { height: 36px; padding-top: 7px; padding-bottom: 7px; }
+.cc-toolbar > .cc-button { height: 36px; padding-top: 6px; padding-bottom: 6px; }
 .cc-root .cc-button:hover, .cc-root .cc-button[aria-pressed="true"] { background: var(--cc-header); }
-.cc-root .cc-view-toggle { display: flex; align-items: center; width: max-content; height: 36px; margin-left: auto; flex-shrink: 0; padding: 3px; border: 1px solid var(--cc-border); border-radius: 18px; background: var(--cc-header); }
-.cc-root .cc-view-toggle:hover { background: var(--cc-header); }
+.cc-root .cc-view-toggle { display: flex; align-items: center; width: max-content; height: 36px; margin-left: auto; flex-shrink: 0; padding: 2px; }
 /* Match the right edge of Cascade's centered 904px list content. */
 .cc-toolbar .cc-view-toggle { margin-right: max(0px, calc((100% - 904px) / 2)); }
-.cc-view-option { display: flex; align-items: center; justify-content: center; min-width: 84px; height: 100%; padding: 0 12px; border-radius: 14px; color: var(--cc-text); }
+.cc-view-option { display: flex; align-items: center; justify-content: center; min-width: 84px; height: 100%; padding: 0 12px; border-radius: 4px; color: var(--cc-text); }
 .cc-view-toggle[aria-checked="false"] .cc-view-list,
 .cc-view-toggle[aria-checked="true"] .cc-view-calendar { color: var(--cc-today-text); background: var(--cc-ink); }
 .cc-root .cc-month-nav { display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; flex-shrink: 0; }
@@ -87,11 +88,17 @@ html[data-darkreader-scheme="dark"] .cc-root {
 .cc-month-previous::before { transform: translateX(2px) rotate(135deg); }
 .cc-month-next::before { transform: translateX(-2px) rotate(-45deg); }
 .cc-root .cc-size-toggle { display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; padding: 4px; flex-shrink: 0; }
-.cc-size-icon { width: 24px; height: 24px; fill: currentColor; }
+.cc-size-icon { width: 16px; height: 16px; fill: currentColor; }
 .cc-root :focus-visible { outline: 3px solid var(--cc-focus); outline-offset: 3px; }
 .cc-root .cc-heading { font: 700 22px/1.3 system-ui, sans-serif; color: var(--cc-text); margin: 0; }
 .cc-root label.cc-jump { display: flex; gap: 6px; align-items: center; white-space: nowrap; flex-shrink: 0; margin: 0; font: inherit; }
-.cc-root .cc-jump input[type="date"] { box-sizing: border-box; font: inherit; line-height: normal; color: var(--cc-ink); height: 36px; min-height: 0; padding: 4px 6px; border: 1px solid var(--cc-border); border-radius: 4px; background: var(--cc-surface); width: auto; }
+.cc-root .cc-jump input[type="date"] { box-sizing: border-box; font: inherit; line-height: normal; color: var(--cc-ink); height: 36px; min-height: 0; padding: 4px 6px; width: auto; }
+.cc-root .cc-toolbar .cc-button,
+.cc-root .cc-toolbar input[type="date"],
+.cc-root .cc-view-toggle { background: var(--cc-header); border: 2px solid var(--cc-control-border); border-radius: 8px; }
+.cc-root .cc-toolbar .cc-button:hover,
+.cc-root .cc-toolbar input[type="date"]:hover,
+.cc-root .cc-view-toggle:hover { background: var(--cc-ride-hover); }
 .cc-root .cc-status { margin: 12px 0; font: inherit; }
 .cc-retry { margin-bottom: 12px; }
 .cc-scroll { overflow-x: auto; border: 1px solid var(--cc-border); border-radius: 8px; }

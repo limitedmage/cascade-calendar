@@ -664,6 +664,36 @@ test("sorts same-name rides at the same time by pace across results pages", asyn
   await expect(page.locator('.cc-day[data-date="2026-10-31"] .cc-ride-title')).toHaveText(expected);
 });
 
+test("matches toolbar control backgrounds, borders, and corners in light and Dark Reader", async ({ page }) => {
+  await setup(page);
+  await page.goto(`${origin}${route}`);
+  await page.addStyleTag({ content: `input[type="date"] { background: #eee; border: 2px solid #999; border-radius: 0; }` });
+  await page.getByRole("switch", { name: "Calendar view", exact: true }).click();
+  const controls = page.locator('.cc-toolbar .cc-button, .cc-toolbar input[type="date"]');
+  const check = async () => {
+    await page.mouse.move(0, 0);
+    const styles = await controls.evaluateAll((nodes) => nodes.map((node) => {
+      const style = getComputedStyle(node);
+      return {
+        background: style.backgroundColor,
+        border: style.borderTopColor,
+        borderWidth: style.borderTopWidth,
+        radius: style.borderTopLeftRadius,
+      };
+    }));
+    for (const style of styles) expect(style).toEqual(styles[0]);
+    await expectReadableCalendar(page, [".cc-month-nav", ".cc-root input", ".cc-view-list", ".cc-view-calendar"]);
+  };
+  await check();
+  await page.addScriptTag({ path: require.resolve("darkreader") });
+  await page.evaluate(() => {
+    DarkReader.setFetchMethod(window.fetch);
+    DarkReader.enable({ brightness: 100, contrast: 100, sepia: 0 });
+  });
+  await expect(page.locator("html")).toHaveAttribute("data-darkreader-scheme", "dark");
+  await check();
+});
+
 test("keeps the date input compact despite Cascade's form-control styles", async ({ page }) => {
   await setup(page);
   await page.goto(`${origin}${route}?f%5B0%5D=event_type%3A21`);
