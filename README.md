@@ -50,7 +50,7 @@ The calendar adapts automatically to Dark Reader, keeping pace colors, controls,
 2. Click **Load unpacked** and select this repository's `extension` folder.
 3. Open Cascade's ride search; the calendar appears by default.
 
-Use **Previous**, **Next**, **Today**, or **Go to date** to navigate. Navigation reloads the page with the sidebar's From/To filters set to the selected month, retaining search, pace, terrain, and other filters. The **Calendar view** toggle at the top right switches between the calendar (on) and Cascade's original list (off). The choice is saved in Cascade's local storage across reloads and tabs; calendar is the default until you choose otherwise.
+Use **Previous**, **Next**, **Today**, or **Go to date** to navigate. Navigation reloads the page with the sidebar's From/To filters set to the selected month, retaining search, pace, terrain, and other filters. The **List / Calendar** toggle at the top right highlights the selected view and switches between the calendar and Cascade's original list. The choice is saved in Cascade's local storage across reloads and tabs; calendar is the default until you choose otherwise.
 
 Calendar mode uses the full available page width on desktop, with a compact filter sidebar. Switching back to the list restores Cascade's original page width and layout.
 

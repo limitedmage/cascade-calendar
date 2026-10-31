@@ -63,7 +63,7 @@ Confirm the dashboard's limited-use certifications only after reviewing the code
 2. The calendar appears by default. No login or special account is required to view public rides.
 3. Navigate months with the arrow buttons, Today, or Go to date.
 4. Expand By Pace on the left and select a pace; the calendar follows the site's filters.
-5. Turn off the Calendar view toggle at the top right to restore the original list and page width; turn it on to switch back.
+5. Use the List / Calendar toggle at the top right to restore the original list and page width, then switch back. The selected view is highlighted.
 
 Cancellation markers and multi-pace groups depend on currently published rides. They are visible whenever Cascade supplies matching data. Dark Reader is optional and not required for the extension to work.
 

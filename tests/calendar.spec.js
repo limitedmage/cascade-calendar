@@ -60,8 +60,11 @@ test("defaults to calendar and saves the selected view in local storage across r
   await page.goto(`${origin}${route}`);
   await expect(page.locator("#cc-calendar-panel")).toBeVisible();
   await expect(page.locator(`#${resultsId}`)).toBeHidden();
-  await expect(page.locator(".cc-toolbar > :last-child")).toHaveText("Calendar view");
+  await expect(page.locator(".cc-toolbar > :last-child")).toHaveText("ListCalendar");
   await expect(page.getByRole("switch", { name: "Calendar view", exact: true })).toHaveAttribute("aria-checked", "true");
+  await expect(page.locator(".cc-view-calendar")).not.toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+  const selectedColor = await page.locator(".cc-view-calendar").evaluate((node) => getComputedStyle(node).backgroundColor);
+  await expect(page.locator(".cc-view-list")).not.toHaveCSS("background-color", selectedColor);
   expect(await page.getByRole("switch").evaluate((node) =>
     Math.abs(node.getBoundingClientRect().right - node.closest(".cc-root").getBoundingClientRect().right))).toBeLessThan(1);
   await page.getByRole("switch", { name: "Calendar view", exact: true }).click();
@@ -70,6 +73,8 @@ test("defaults to calendar and saves the selected view in local storage across r
   await page.reload();
   await expect(page.locator(`#${resultsId}`)).toBeVisible();
   await expect(page.getByRole("switch", { name: "Calendar view", exact: true })).toHaveAttribute("aria-checked", "false");
+  await expect(page.locator(".cc-view-list")).toHaveCSS("background-color", selectedColor);
+  await expect(page.locator(".cc-view-calendar")).not.toHaveCSS("background-color", selectedColor);
   expect(await page.getByRole("switch").evaluate((node) =>
     Math.abs(node.getBoundingClientRect().right - node.closest(".cc-root").getBoundingClientRect().right))).toBeLessThan(1);
   const other = await context.newPage();
@@ -98,7 +103,7 @@ test("toggles original list and loads every page with safe links and Pacific dat
   await page.getByRole("switch", { name: "Calendar view", exact: true }).focus();
   await page.keyboard.press("Enter");
   await expect(page.locator(".cc-toolbar").getByRole("switch", { name: "Calendar view", exact: true })).toBeFocused();
-  await expect(page.locator(".cc-toolbar > :last-child")).toHaveText("Calendar view");
+  await expect(page.locator(".cc-toolbar > :last-child")).toHaveText("ListCalendar");
   await expect(page.locator(".cc-view-label, .cc-help")).toHaveCount(0);
   await expect(page.getByRole("status")).toHaveText("2 free group rides.");
   await expect(page.locator(`#${resultsId}`)).toBeHidden();
@@ -320,7 +325,7 @@ test("reuses the loaded first page and requests known remaining pages concurrent
   await expect(page.locator("#cc-calendar-panel")).toHaveAttribute("aria-busy", "false");
 });
 
-async function expectReadableCalendar(page, selectors = [".cc-day:not(.cc-outside)", ".cc-outside", ".cc-weekday", ".cc-ride", ".cc-ride-meta", ".cc-button", ".cc-root input", ".cc-today .cc-day-number"]) {
+async function expectReadableCalendar(page, selectors = [".cc-day:not(.cc-outside)", ".cc-outside", ".cc-weekday", ".cc-ride", ".cc-ride-meta", ".cc-button", ".cc-root input", ".cc-today .cc-day-number", ".cc-view-list", ".cc-view-calendar"]) {
   for (const selector of selectors) {
     const contrast = await page.locator(selector).first().evaluate((node) => {
       const ride = node.closest(".cc-ride");

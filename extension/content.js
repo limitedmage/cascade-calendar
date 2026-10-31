@@ -326,7 +326,7 @@
     month = new Date(initial.getFullYear(), initial.getMonth(), 1);
     host = element("div", "cc-root");
     host.id = "cascade-ride-calendar";
-    toggle = button("Calendar view", null, () => {
+    toggle = button("", "Calendar view", () => {
       setMode(!calendarMode);
       try {
         localStorage.setItem(PREFERENCE, calendarMode ? "calendar" : "list");
@@ -335,9 +335,11 @@
     toggle.classList.add("cc-view-toggle");
     toggle.setAttribute("role", "switch");
     toggle.setAttribute("aria-controls", "cc-calendar-panel");
-    const track = element("span", "cc-view-track");
-    track.setAttribute("aria-hidden", "true");
-    toggle.prepend(track);
+    const listOption = element("span", "cc-view-option cc-view-list", "List");
+    const calendarOption = element("span", "cc-view-option cc-view-calendar", "Calendar");
+    listOption.setAttribute("aria-hidden", "true");
+    calendarOption.setAttribute("aria-hidden", "true");
+    toggle.append(listOption, calendarOption);
     panel = element("section", "cc-panel");
     panel.id = "cc-calendar-panel";
     panel.setAttribute("aria-label", "Free group ride calendar");
