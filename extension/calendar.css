@@ -63,7 +63,7 @@ html[data-darkreader-scheme="dark"] .cc-root {
 }
 
 .cc-root * { box-sizing: border-box; }
-.cc-toolbar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.cc-toolbar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
 .cc-date-controls { display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
 .cc-root .cc-button {
   font: inherit;
@@ -91,6 +91,10 @@ html[data-darkreader-scheme="dark"] .cc-root {
 .cc-month-next::before { transform: translateX(-2px) rotate(-45deg); }
 .cc-root .cc-size-toggle { display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; padding: 4px; flex-shrink: 0; }
 .cc-size-icon { width: 20px; height: 20px; fill: currentColor; }
+.cc-loading { display: block; width: 16px; height: 16px; flex-shrink: 0; border: 2px solid var(--cc-control-border); border-top-color: var(--cc-ink); border-radius: 50%; animation: cc-spin 800ms linear infinite; }
+.cc-panel:not([aria-busy="true"]) .cc-loading { display: none; }
+@keyframes cc-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .cc-loading { animation: none; } }
 .cc-root :focus-visible { outline: 3px solid var(--cc-focus); outline-offset: 3px; }
 .cc-root .cc-heading { font: 700 22px/1.3 system-ui, sans-serif; color: var(--cc-text); margin: 0; }
 .cc-root label.cc-jump { display: flex; gap: 6px; align-items: center; white-space: nowrap; flex-shrink: 0; margin: 0; font: inherit; }
@@ -102,6 +106,7 @@ html[data-darkreader-scheme="dark"] .cc-root {
 .cc-root .cc-toolbar input[type="date"]:hover,
 .cc-root .cc-view-toggle:hover { background: var(--cc-ride-hover); }
 .cc-root .cc-status { margin: 12px 0; font: inherit; }
+.cc-panel[aria-busy="true"] .cc-status { position: absolute; width: 1px; height: 1px; padding: 0; margin: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .cc-retry { margin-bottom: 12px; }
 .cc-scroll { overflow-x: auto; border: 1px solid var(--cc-border); border-radius: 8px; }
 .cc-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); min-width: 770px; background: var(--cc-border); gap: 1px; }

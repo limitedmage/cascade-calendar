@@ -10,7 +10,7 @@ This is 100% vibe-coded, use at your own risk. I tested it manually but have not
 
 ### A full month of rides
 
-See the whole month, including rides from every results page. Navigate with the month arrows, Today, or Go to date.
+See the whole month in Monday-to-Sunday weeks, including rides in the visible days before and after the month and from every results page. Navigate with the month arrows, Today, or Go to date.
 
 ![Full November calendar with rides throughout the month, navigation, and sidebar filters](docs/calendar.png)
 
@@ -54,9 +54,9 @@ Use **Previous**, **Next**, **Today**, or **Go to date** to navigate. Navigation
 
 Calendar mode uses the full available page width on desktop, with a compact filter sidebar. Month controls stay aligned with the calendar's left edge, while the view toggle stays anchored to the list-mode content's right edge to avoid jumping when switching. Switching back to the list restores Cascade's original page width and layout.
 
-The calendar fetches all pages for the displayed month, not just the visible list page. Days expand to show every ride by default. Use the expand/collapse icon next to **Go to date** to switch to compact, 220px-tall days with internal scrolling. This preference is saved in Cascade's local storage across page reloads and tabs. On small screens, scroll the calendar horizontally. Existing date filters narrow the initial month; apply sidebar filters using Cascade's Search button. Calendar requests select Free Group Ride (`event_type:21`), including virtual rides returned under that type. Times use Cascade's Pacific wall-clock dates, regardless of your computer's timezone.
+The calendar fetches all pages for the displayed weeks, not just the visible list page. Full-month date filters include the visible days from neighboring months; narrower sidebar date filters still apply. Days expand to show every ride by default. Use the expand/collapse icon next to **Go to date** to switch to compact, 220px-tall days with internal scrolling. This preference is saved in Cascade's local storage across page reloads and tabs. On small screens, scroll the calendar horizontally. Existing date filters narrow the initial month; apply sidebar filters using Cascade's Search button. Calendar requests select Free Group Ride (`event_type:21`), including virtual rides returned under that type. Times use Cascade's Pacific wall-clock dates, regardless of your computer's timezone.
 
-Matching rides already on the page appear immediately. Additional results render as each page arrives, with up to three pages requested concurrently. Completed results are reused for 60 seconds when switching views. The loading status explicitly indicates when results are incomplete; a failed request keeps the available rides visible with a warning and Retry.
+Matching rides already on the page appear immediately. Additional results render as each page arrives, with up to three pages requested concurrently. Completed results are reused for 60 seconds when switching views. A spinner beside expand/collapse indicates that results are still loading, with loading announcements available to screen readers. A failed request keeps the available rides visible with a warning and Retry; empty results show a message. The ride count is not displayed.
 
 No background service, external libraries, analytics, or extra extension permissions. Requests go only to Cascade; the original list remains accessible.
 

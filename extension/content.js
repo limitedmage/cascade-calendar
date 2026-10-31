@@ -40,6 +40,13 @@
     `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
   const filterDate = (date) =>
     `${String(date.getMonth() + 1).padStart(2, "0")}/${String(date.getDate()).padStart(2, "0")}/${date.getFullYear()}`;
+  const calendarRange = (date) => {
+    const first = new Date(date.getFullYear(), date.getMonth(), 1);
+    const last = new Date(date.getFullYear(), date.getMonth() + 1, 0);
+    first.setDate(first.getDate() - (first.getDay() + 6) % 7);
+    last.setDate(last.getDate() + (7 - last.getDay()) % 7);
+    return { first, last };
+  };
   const parseFilter = (value) => {
     const match = value?.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
     if (!match) return null;
@@ -140,13 +147,11 @@
   function render(rides) {
     const grid = panel.querySelector(".cc-grid");
     grid.replaceChildren();
-    for (const day of ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]) {
+    for (const day of ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]) {
       grid.append(element("div", "cc-weekday", day));
     }
-    const first = new Date(month.getFullYear(), month.getMonth(), 1);
-    const last = new Date(month.getFullYear(), month.getMonth() + 1, 0);
+    const { first, last } = calendarRange(month);
     const today = dateKey(pacificToday());
-    const count = Math.ceil((first.getDay() + last.getDate()) / 7) * 7;
     const grouped = new Map();
     for (const ride of rides.sort((a, b) =>
       a.sort.localeCompare(b.sort) || a.name.localeCompare(b.name)
@@ -154,8 +159,7 @@
       if (!grouped.has(ride.date)) grouped.set(ride.date, []);
       grouped.get(ride.date).push(ride);
     }
-    for (let index = 0; index < count; index++) {
-      const date = new Date(month.getFullYear(), month.getMonth(), index - first.getDay() + 1);
+    for (const date = new Date(first); date <= last; date.setDate(date.getDate() + 1)) {
       const key = dateKey(date);
       const inMonth = date.getMonth() === month.getMonth();
       const cell = element("section", `cc-day${inMonth ? "" : " cc-outside"}`);
@@ -168,22 +172,20 @@
         number.setAttribute("aria-current", "date");
       }
       cell.append(number);
-      if (inMonth) {
-        for (const ride of grouped.get(key) || []) {
-          const link = element("a", "cc-ride");
-          link.href = ride.url;
-          link.dataset.start = ride.start;
-          if (ride.pace) link.dataset.pace = ride.pace;
-          if (ride.cancelled) {
-            link.classList.add("cc-ride-cancelled");
-            link.append(element("span", "cc-cancelled-label", "CANCELLED"));
-          }
-          link.append(element("span", "cc-ride-time", ride.time.split("•").pop().trim()));
-          link.append(element("span", "cc-ride-title", ride.title));
-          if (ride.metadata) link.append(element("span", "cc-ride-meta", ride.metadata));
-          link.title = `${ride.cancelled ? "CANCELLED\n" : ""}${ride.title}\n${ride.time}\n${ride.metadata}`;
-          cell.append(link);
+      for (const ride of grouped.get(key) || []) {
+        const link = element("a", "cc-ride");
+        link.href = ride.url;
+        link.dataset.start = ride.start;
+        if (ride.pace) link.dataset.pace = ride.pace;
+        if (ride.cancelled) {
+          link.classList.add("cc-ride-cancelled");
+          link.append(element("span", "cc-cancelled-label", "CANCELLED"));
         }
+        link.append(element("span", "cc-ride-time", ride.time.split("•").pop().trim()));
+        link.append(element("span", "cc-ride-title", ride.title));
+        if (ride.metadata) link.append(element("span", "cc-ride-meta", ride.metadata));
+        link.title = `${ride.cancelled ? "CANCELLED\n" : ""}${ride.title}\n${ride.time}\n${ride.metadata}`;
+        cell.append(link);
       }
       grid.append(cell);
     }
@@ -197,20 +199,22 @@
     const status = panel.querySelector(".cc-status");
     const retry = panel.querySelector(".cc-retry");
     retry.hidden = true;
+    status.hidden = false;
     panel.setAttribute("aria-busy", "true");
     const url = freeRidesOnly(filters());
     const from = parseFilter(url.searchParams.get("date_from"));
     const to = parseFilter(url.searchParams.get("date_to"));
     const first = new Date(month.getFullYear(), month.getMonth(), 1);
     const last = new Date(month.getFullYear(), month.getMonth() + 1, 0);
-    url.searchParams.set("date_from", filterDate(from && from > first ? from : first));
-    url.searchParams.set("date_to", filterDate(to && to < last ? to : last));
+    const range = calendarRange(month);
+    // Full-month filters include spillover days; narrower date filters still apply.
+    url.searchParams.set("date_from", filterDate(from && from > first ? from : range.first));
+    url.searchParams.set("date_to", filterDate(to && to < last ? to : range.last));
     const key = `${queryKey(url)}|${block.textContent}`;
     const cached = cache.get(key);
     const complete = (count) => {
-      status.textContent = count
-        ? `${count} free group ride${count === 1 ? "" : "s"}.`
-        : "No free group rides match your filters this month.";
+      status.hidden = count > 0;
+      status.textContent = count ? "" : "No free group rides match your filters for the visible dates.";
     };
     if (cached && Date.now() - cached.time < 60000) {
       render(cached.rides);
@@ -232,8 +236,8 @@
     const progress = () => {
       render([...rides.values()]);
       status.textContent = rides.size
-        ? `${rides.size} free group ride${rides.size === 1 ? "" : "s"} shown. Loading remaining results; this calendar is not complete yet.`
-        : "Loading free group rides for this month...";
+        ? "Loading remaining results; this calendar is not complete yet."
+        : "Loading free group rides...";
     };
     const applied = new URL(location.href);
     if (queryKey(applied, true) === queryKey(url, true)) {
@@ -283,7 +287,7 @@
     } catch (error) {
       if (request.signal.aborted) return;
       failed = true;
-      status.textContent = `Could not load the complete calendar. ${rides.size} rides shown; more may be missing. Retry or switch to the default list.`;
+      status.textContent = "Could not load the complete calendar. Rides may be missing. Retry or switch to the default list.";
       retry.hidden = false;
       request.abort();
     } finally {
@@ -394,8 +398,11 @@
     icon.append(document.createElementNS("http://www.w3.org/2000/svg", "path"));
     sizeToggle.append(icon);
     sizeToggle.setAttribute("aria-controls", "cc-calendar-grid");
+    const loading = element("span", "cc-loading");
+    loading.setAttribute("aria-hidden", "true");
+    loading.title = "Loading free group rides...";
     const dateControls = element("div", "cc-date-controls");
-    dateControls.append(label, sizeToggle);
+    dateControls.append(label, sizeToggle, loading);
     toolbar.append(dateControls);
     const status = element("p", "cc-status");
     status.setAttribute("role", "status");
