@@ -4,9 +4,10 @@ const path = require("node:path");
 const origin = "https://cascade.org";
 const route = "/rides-events/ride-event-search";
 const resultsId = "block-views-block-rides-events-search-mainblock";
-const card = (id, title, date, time = "09:00", offset = "-07:00") => `
+const card = (id, title, date, time = "09:00", offset = "-07:00", status = "Registration Now Open") => `
   <div><div class="card-sm-event">
     <p>Free Group Ride</p>
+    <p class="btn-tag"><span>${status}</span></p>
     <div><time datetime="${date}T${time}:00${offset}">Saturday • ${time} am</time> -
     <time datetime="${date}T14:00:00${offset}">2:00 pm</time></div>
     <a class="card-overlay-link" href="/rides-events/${id}" aria-hidden="true" tabindex="-1"></a>
@@ -271,9 +272,9 @@ test("colors rides by their final pace label and keeps every pace readable in Da
     ["Steady", "steady", "rgb(225, 184, 0)", "rgb(255, 245, 204)"],
     ["Moderate", "moderate", "rgb(36, 107, 60)", "rgb(231, 243, 233)"],
     ["Brisk", "brisk", "rgb(24, 89, 160)", "rgb(231, 240, 252)"],
-    ["Vigorous", "vigorous", "rgb(107, 51, 149)", "rgb(241, 233, 250)"],
-    ["Strenuous", "strenuous", "rgb(0, 0, 0)", "rgb(236, 238, 239)"],
-    ["Super Strenuous", "strenuous", "rgb(0, 0, 0)", "rgb(236, 238, 239)"],
+    ["Vigorous", "vigorous", "rgb(81, 70, 179)", "rgb(236, 235, 251)"],
+    ["Strenuous", "strenuous", "rgb(139, 43, 178)", "rgb(245, 230, 250)"],
+    ["Super Strenuous", "strenuous", "rgb(139, 43, 178)", "rgb(245, 230, 250)"],
     ["Self Paced", "self-paced", "rgb(115, 123, 128)", "rgb(240, 242, 243)"],
   ];
   await setup(page, () => ({
@@ -391,4 +392,41 @@ test("uses accessible month icons and keeps the date control together on narrow 
   await page.keyboard.press("Enter");
   await expect(page.locator(".cc-heading")).toHaveText("November 2026");
   await page.screenshot({ path: test.info().outputPath("mobile-toolbar.png") });
+});
+
+test("marks cancelled rides while crossing out only their names", async ({ page }) => {
+  await setup(page, () => ({
+    body: results(
+      card(1, "Rainy ride (Steady)", "2026-10-31", "09:00", "-07:00", "Event has been cancelled.")
+      + card(2, "Cancelled: Coffee loop (Moderate)", "2026-10-31")
+      + card(3, "Lake loop (Brisk)", "2026-10-31", "09:00", "-07:00", "Canceled")
+      + card(4, "Still riding (Steady)", "2026-10-31"),
+    ),
+  }));
+  await page.goto(`${origin}${route}?f%5B0%5D=event_type%3A21`);
+  await page.getByRole("button", { name: "Show calendar", exact: true }).click();
+  await expect(page.getByRole("status")).toContainText("All results pages included");
+  for (const id of [1, 2, 3]) {
+    const ride = page.locator(`.cc-ride[href$="/${id}"]`);
+    await expect(ride.locator(".cc-cancelled-label")).toHaveText("CANCELLED");
+    await expect(ride.locator(".cc-ride-title")).toHaveCSS("text-decoration-line", "line-through");
+    await expect(ride.locator(".cc-ride-time")).toHaveCSS("text-decoration-line", "none");
+    await expect(ride.locator(".cc-ride-meta")).toHaveCSS("text-decoration-line", "none");
+    await expect(ride).toHaveCSS("text-decoration-line", "none");
+    await expect(ride).toHaveAccessibleName(/CANCELLED/);
+  }
+  const active = page.locator('.cc-ride[href$="/4"]');
+  await expect(active.locator(".cc-cancelled-label")).toHaveCount(0);
+  await expect(active.locator(".cc-ride-title")).toHaveCSS("text-decoration-line", "none");
+  await expect(page.locator('.cc-ride[href$="/1"]')).toHaveAttribute("data-pace", "steady");
+  await expectReadableCalendar(page, [".cc-cancelled-label"]);
+  await page.addScriptTag({ path: require.resolve("darkreader") });
+  await page.evaluate(() => {
+    DarkReader.setFetchMethod(window.fetch);
+    DarkReader.enable({ brightness: 100, contrast: 100, sepia: 0 });
+  });
+  await expect(page.locator("html")).toHaveAttribute("data-darkreader-scheme", "dark");
+  await expectReadableCalendar(page, [".cc-cancelled-label"]);
+  await page.getByRole("button", { name: "Show default list" }).click();
+  await expect(page.locator(`#${resultsId} .card-title`).first()).toHaveCSS("text-decoration-line", "none");
 });

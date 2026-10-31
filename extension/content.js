@@ -108,9 +108,11 @@
       const metadata = card.lastElementChild?.matches("h3") ? "" : card.lastElementChild?.textContent.replace(/\s+/g, " ").trim();
       const pace = title.match(/\((easy|leisurely|steady|moderate|brisk|vigorous|(?:super[\s-]+)?strenuous|self[\s-]+paced)\)\s*$/i)?.[1]
         .toLowerCase().replace(/^super[\s-]+/, "").replace(/^self[\s-]+paced$/, "self-paced");
+      const cancelled = /\bcancell?ed\b/i.test(title)
+        || [...card.querySelectorAll(".btn-tag")].some((tag) => /\bcancell?ed\b/i.test(tag.textContent));
       rides.push({
         date: start.slice(0, 10), sort: start.slice(11, 16), title, url: url.href,
-        time: times.join(" - "), metadata: metadata || "", pace,
+        time: times.join(" - "), metadata: metadata || "", pace, cancelled,
       });
     }
     return rides;
@@ -150,10 +152,14 @@
           const link = element("a", "cc-ride");
           link.href = ride.url;
           if (ride.pace) link.dataset.pace = ride.pace;
+          if (ride.cancelled) {
+            link.classList.add("cc-ride-cancelled");
+            link.append(element("span", "cc-cancelled-label", "CANCELLED"));
+          }
           link.append(element("span", "cc-ride-time", ride.time.split("•").pop().trim()));
           link.append(element("span", "cc-ride-title", ride.title));
           if (ride.metadata) link.append(element("span", "cc-ride-meta", ride.metadata));
-          link.title = `${ride.title}\n${ride.time}\n${ride.metadata}`;
+          link.title = `${ride.cancelled ? "CANCELLED\n" : ""}${ride.title}\n${ride.time}\n${ride.metadata}`;
           cell.append(link);
         }
       }
