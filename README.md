@@ -2,6 +2,10 @@
 
 A Chrome extension that adds a month calendar to [Cascade's ride search](https://cascade.org/rides-events/ride-event-search?f%5B0%5D=event_type%3A21).
 
+## DISCLAIMER
+
+This is 100% vibe-coded, use at your own risk. 
+
 ## Install
 
 1. Open `chrome://extensions` and enable **Developer mode**.
