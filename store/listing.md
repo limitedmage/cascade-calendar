@@ -37,13 +37,9 @@ Bring a calendar view back to Cascade Bicycle Club's free group ride search.
 - Expand busy days to show every ride, or use compact days with internal scrolling.
 - Use the calendar with the Dark Reader extension.
 
-Ride times follow Cascade's Pacific dates (PST/PDT), regardless of your computer's timezone. Days are expanded by default. An expand/collapse icon beside Go to date changes the layout; both that choice and the selected view are remembered across reloads and tabs. The view toggle stays anchored while desktop page width changes, and reduced-motion preferences disable animations.
-
-Full-month date filters include neighboring days in the displayed weeks; narrower sidebar date ranges still apply. Available rides appear immediately while remaining pages load. A small spinner beside expand/collapse shows loading progress; hover for its tooltip. Failed requests keep available rides visible with a warning and Retry. Empty searches show a message. Recent results are reused for faster view switching.
-
 Works on https://cascade.org/rides-events/ride-event-search. The extension does not run on other sites.
 
-Privacy: No developer server, analytics, ads, or remotely executed code. Website content and search/filter selections are handled to render the calendar. Ride requests go only to Cascade over HTTPS. Both the calendar/list and expand/collapse preferences persist in Cascade's local storage across reloads and tabs. Short-lived results stay in memory.
+Privacy: There are no developer server, analytics, ads, or remotely executed code. Website content and search/filter selections are handled to render the calendar. Ride requests go only to Cascade over HTTPS. Preferences persist in Cascade's local storage . 
 
 This is an unofficial community project, not affiliated with or endorsed by Cascade Bicycle Club. Ride availability and details come from Cascade; always check the original ride page before attending. AI tools were used to create this extension.
 
