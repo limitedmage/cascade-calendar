@@ -81,7 +81,7 @@ Playwright's browser timezone is `America/Los_Angeles` (PST/PDT). Tests use loca
 
 ## Chrome Web Store
 
-See the [submission guide and listing text](store/listing.md) and [privacy policy](docs/privacy.md). Build the upload ZIP with `.\scripts\package.ps1`. Store-sized screenshots are in `store`; the original calendar-and-bike icon is in `assets\icon.svg`, with PNGs bundled in `extension\icons`.
+See the [submission guide and listing text](store/listing.md). Build the upload ZIP with `.\scripts\package.ps1`. Store-sized screenshots are in `store`; the original calendar-and-bike icon is in `assets\icon.svg`, with PNGs bundled in `extension\icons`.
 
 To regenerate the icon PNGs after changing the SVG, run `node .\scripts\generate-icons.js`.
 

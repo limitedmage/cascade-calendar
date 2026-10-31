@@ -20,8 +20,6 @@ Only the `extension` folder belongs in the ZIP. Development scripts, dependencie
 
 **Support URL:** https://github.com/limitedmage/cascade-calendar/issues
 
-**Privacy policy URL:** https://github.com/limitedmage/cascade-calendar/blob/main/docs/privacy.md
-
 ### Detailed description
 
 Bring a calendar view back to Cascade Bicycle Club's free group ride search.
@@ -47,6 +45,8 @@ This is an unofficial community project, not affiliated with or endorsed by Casc
 
 Review these disclosures against the actual extension and the current dashboard before submitting. Chrome treats locally processed website content and form information as data handling; do not claim that the extension handles no data.
 
+No privacy policy is included in this repository. Google's [User Data FAQ](https://developer.chrome.com/docs/webstore/program-policies/user-data-faq) requires a policy for extensions that handle data, including locally processed website content. Resolve this requirement before submitting.
+
 **Single purpose:** Adds a filterable monthly calendar to Cascade Bicycle Club's free group ride search.
 
 **Site access justification:** Access is limited to Cascade's ride search page so the extension can read public ride listings and filter selections, fetch matching results pages, and display a calendar alongside the original list.
@@ -55,7 +55,7 @@ Review these disclosures against the actual extension and the current dashboard 
 
 **Data categories:** Disclose Website content and User activity for ride-page content and filter interactions. Disclose Web history for handling the Cascade search URL and its query parameters; explain that access is limited to this page and no browsing-history log is maintained. No developer collection or sale; handling is local except for the searches requested from Cascade.
 
-Confirm the dashboard's limited-use certifications only after reviewing the privacy policy and code. No authentication data is read by the extension; ordinary requests may carry existing Cascade cookies under browser rules.
+Confirm the dashboard's limited-use certifications only after reviewing the code and actual data handling. No authentication data is read by the extension; ordinary requests may carry existing Cascade cookies under browser rules.
 
 ## Reviewer instructions
 
@@ -78,11 +78,11 @@ Screenshots use actual calendar captures presented in store-sized layouts. No fa
 
 ## Final submission checklist
 
-1. Review the privacy policy and listing text, especially data disclosures.
+1. Review the listing text, especially data disclosures.
 2. Upload the ZIP and enter the listing fields.
 3. Upload the icon and screenshots.
 4. Choose distribution countries and visibility.
-5. Complete Privacy practices and paste the policy URL.
+5. Complete Privacy practices and meet the applicable policy requirements.
 6. Add reviewer instructions and submit for review.
 
 The extension has not been uploaded or submitted automatically. Future uploads must increase `extension\manifest.json`'s version above the last version uploaded.
