@@ -10,27 +10,52 @@ This is 100% vibe-coded, use at your own risk. I tested it manually but have not
 
 ### A full month of rides
 
-See the whole month in Monday-to-Sunday weeks, including rides in the visible days before and after the month and from every results page. Navigate with the month arrows, Today, or Go to date.
+See the whole month in complete weeks, including rides in the visible days before and after the month and from every results page. Navigate with the month arrows, Today, or Go to date.
 
-![Full November calendar with rides throughout the month, navigation, and sidebar filters](docs/calendar.png)
+![Month calendar in compact mode, with neighboring-month rides and the current toolbar](docs/calendar.png)
+
+### Switch views without losing your place
+
+The calendar opens by default. The **List / Calendar** toggle slides its highlight between views and stays in the same desktop position while the calendar expands to use the page width. Your view choice is saved across reloads and tabs. Reduced-motion preferences disable the animation.
+
+![Calendar selected in the view toggle](docs/view-calendar.png)
+![List selected in the view toggle](docs/view-list.png)
+
+### Expanded or compact days
+
+Days expand to show every ride by default. The icon beside **Go to date** switches to compact, 220px-tall days with internal scrolling and remembers your choice. The full-month screenshot above uses compact mode.
+
+See the [full expanded calendar](docs/calendar-expanded.png) for the default layout.
+
+| Expanded (default) | Compact, with scrolling |
+|---|---|
+| ![A busy day expanded to show every ride](docs/expanded-day.png) | ![The same day in compact mode with an internal scrollbar](docs/collapsed-day.png) |
 
 ### CTS-based pace colors
 
 Softly tinted ride cards and strong left borders use CTS-based pace colors, with the pace name also shown in the title.
 
-![Live ride cards with pink, green, blue, purple, and gray pace colors](docs/pace-colors.png)
+![Live ride cards with CTS-based pace colors, including intentionally faded past rides](docs/pace-colors.png)
 
 ### Multi-pace rides sorted by pace
 
 Rides with the same name and start time sort from Easy through Self Paced, rather than alphabetically by the pace label.
 
-![Same-name MUMPS rides ordered Steady, Moderate, then Brisk](docs/pace-order.png)
+![Same-name MUMPS rides starting together and ordered Steady, Moderate, then Brisk](docs/pace-order.png)
 
 ### Cancelled rides clearly marked
 
 Cancelled rides remain visible with a **CANCELLED** label and their name crossed out.
 
 ![Cancelled Cascade ride with only its name crossed out](docs/cancelled-ride.png)
+
+### Past rides fade
+
+After a ride's start time, its card fades to 60% opacity. Hovering or keyboard-focusing it restores full opacity so you can read its details. This updates automatically every minute.
+
+| Past ride | Hovered past ride |
+|---|---|
+| ![A past ride at 60 percent opacity](docs/past-ride.png) | ![The same past ride restored to full opacity on hover](docs/past-ride-hover.png) |
 
 ### Filter by pace from the sidebar
 
@@ -42,7 +67,7 @@ Use Cascade's **By Pace** filters on the left to narrow the calendar without los
 
 The calendar adapts automatically to Dark Reader, keeping pace colors, controls, and text readable.
 
-![Live Cascade calendar with Dark Reader enabled](docs/dark-reader.png)
+![Compact calendar and matching toolbar controls with Dark Reader enabled](docs/dark-reader.png)
 
 ## Install
 
@@ -83,11 +108,15 @@ Playwright's browser timezone is `America/Los_Angeles` (PST/PDT). Tests use loca
 
 ## Chrome Web Store
 
-See the [submission guide and listing text](store/listing.md). Build the upload ZIP with `.\scripts\package.ps1`. Store-sized screenshots are in `store`; the original calendar-and-bike icon is in `assets\icon.svg`, with PNGs bundled in `extension\icons`.
+See the [submission guide and listing text](store/listing.md). Build the upload ZIP with `./scripts/package.ps1`. Store-sized screenshots are in `store`; the original calendar-and-bike icon is in `assets/icon.svg`, with PNGs bundled in `extension/icons`.
 
-To regenerate the icon PNGs after changing the SVG, run `node .\scripts\generate-icons.js`.
+To regenerate the icon PNGs after changing the SVG, run `node ./scripts/generate-icons.js`.
 
-To regenerate store-sized images from the README's live screenshots, run `node .\scripts\generate-store-images.js`.
+To refresh screenshots from the live site, run `node ./scripts/capture-screenshots.js`, then `node ./scripts/generate-store-images.js`. The capture script loads the actual unpacked extension in Pacific time, captures the next month and visible neighboring dates, and uses currently published rides for pace and cancellation examples. It also captures view states, expanded/compact days, past-ride fading, loading, and actual Dark Reader rendering. If suitable examples are unavailable, it stops rather than inventing ride data.
+
+The generator produces five 1280 x 800 store images: a full-month overview and readable feature close-ups, plus five overview graphics in `share`. Screenshot sources are in `docs` and `assets`. All screenshot assets use live Cascade content; the site may change after capture.
+
+Before uploading a replacement ZIP, increase `extension/manifest.json`'s version above the last uploaded version and rebuild the package. Listing-only changes do not require a new ZIP.
 
 ## Contributing
 

@@ -28,7 +28,7 @@ Open `chrome://extensions`, enable **Developer mode**, click **Load unpacked**, 
 
 - `extension`: packaged Manifest V3 extension; plain JavaScript and CSS, without bundled runtime libraries.
 - `tests`: Playwright browser tests using local responses modeled on Cascade's markup.
-- `scripts`: icon generation, store image generation, and ZIP packaging.
+- `scripts`: live screenshot capture, icon/store image generation, and ZIP packaging.
 - `assets`: original icon artwork and supporting screenshot captures.
 - `docs`, `store`, and `share`: README screenshots, store listing assets, and social sharing images.
 
@@ -36,7 +36,7 @@ Open `chrome://extensions`, enable **Developer mode**, click **Load unpacked**, 
 
 Keep changes focused and preserve Cascade's original list view and sidebar filters. Avoid unnecessary dependencies, permissions, or requests to other sites. Follow existing naming and formatting.
 
-Add focused tests for behavior you introduce or fix, preferably in `tests\calendar.spec.js`. Use local fixture responses rather than making automated tests depend on the live site.
+Add focused tests for behavior you introduce or fix, preferably in `tests/calendar.spec.js`. Use local fixture responses rather than making automated tests depend on the live site.
 
 ```powershell
 npm run check
@@ -57,16 +57,17 @@ For documentation-only changes, check links and images; browser tests are not re
 
 ## Artwork and publication assets
 
-Edit `assets\icon.svg` to change the icon, then regenerate the packaged PNGs:
+Edit `assets/icon.svg` to change the icon, then regenerate the packaged PNGs:
 
 ```powershell
-node .\scripts\generate-icons.js
+node ./scripts/generate-icons.js
 ```
 
-To rebuild store images from their screenshot sources:
+To refresh live screenshots with the unpacked extension and rebuild the store/share images:
 
 ```powershell
-node .\scripts\generate-store-images.js
+node ./scripts/capture-screenshots.js
+node ./scripts/generate-store-images.js
 ```
 
 Keep store screenshots at 1280 x 800 pixels and check readability at the store's 640 x 400 display size. Use actual extension captures, not fabricated ride listings.
@@ -74,7 +75,7 @@ Keep store screenshots at 1280 x 800 pixels and check readability at the store's
 Build the extension upload ZIP with:
 
 ```powershell
-.\scripts\package.ps1
+./scripts/package.ps1
 ```
 
 The ZIP is created in `dist`, which is ignored by Git. Packaging requires internet access to download and bundle the official GPLv3 text. Do not commit `node_modules`, test output, or ZIPs. Version changes and Chrome Web Store submissions are handled by the maintainer; discuss them before including them in a pull request.

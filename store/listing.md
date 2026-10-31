@@ -2,9 +2,11 @@
 
 ## Upload package
 
-Run `.\scripts\package.ps1` from the repository root. Upload the generated `dist\cascade-calendar-1.0.0.zip` at https://chrome.google.com/webstore/devconsole.
+Run `./scripts/package.ps1` from the repository root. Upload the generated `dist/cascade-calendar-1.0.0.zip` at https://chrome.google.com/webstore/devconsole.
 
 The ZIP contains the `extension` folder's contents plus the full GPLv3 license, downloaded from GNU by the package script. Development scripts, dependencies, screenshots, and documentation are not bundled. The extension is GPLv3-only (`GPL-3.0-only`).
+
+When uploading a replacement ZIP, the manifest version must be higher than the last version uploaded. Listing-only changes do not require a new ZIP. The package script uses `extension/manifest.json`'s version in the ZIP filename.
 
 ## Listing fields
 
@@ -24,22 +26,26 @@ The ZIP contains the `extension` folder's contents plus the full GPLv3 license, 
 
 Bring a calendar view back to Cascade Bicycle Club's free group ride search.
 
-- See a full month of rides, including every results page.
-- Switch between Cascade's original list and the calendar.
+- See a full month of rides.
+- Include matching rides from every results page, not just the first page of the list.
+- Start in calendar view by default, or switch to Cascade's original list.
 - Navigate with Previous, Next, Today, or Go to date.
 - Find matching rides with Cascade's sidebar filters, including pace.
 - Recognize paces with CTS-based colors and softly tinted cards.
 - See same-name rides starting together ordered by pace.
 - Spot cancelled rides with a CANCELLED label and crossed-out name.
+- Expand busy days to show every ride, or use compact days with internal scrolling.
 - Use the calendar with the Dark Reader extension.
 
-Ride times follow Cascade's Pacific dates. Busy days expand to show every ride; an expand/collapse icon beside Go to date switches to compact, scrolling days and remembers your choice. Recent results are reused for faster view switching.
+Ride times follow Cascade's Pacific dates (PST/PDT), regardless of your computer's timezone. Days are expanded by default. An expand/collapse icon beside Go to date changes the layout; both that choice and the selected view are remembered across reloads and tabs. The view toggle stays anchored while desktop page width changes, and reduced-motion preferences disable animations.
+
+Full-month date filters include neighboring days in the displayed weeks; narrower sidebar date ranges still apply. Available rides appear immediately while remaining pages load. A small spinner beside expand/collapse shows loading progress; hover for its tooltip. Failed requests keep available rides visible with a warning and Retry. Empty searches show a message. Recent results are reused for faster view switching.
 
 Works on https://cascade.org/rides-events/ride-event-search. The extension does not run on other sites.
 
-Privacy: website content and search/filter selections are handled to render the calendar. Ride requests go only to Cascade over HTTPS. Both the calendar/list and expand/collapse preferences persist in Cascade's local storage. Short-lived results stay in memory. No developer server, analytics, ads, or remotely executed code.
+Privacy: No developer server, analytics, ads, or remotely executed code. Website content and search/filter selections are handled to render the calendar. Ride requests go only to Cascade over HTTPS. Both the calendar/list and expand/collapse preferences persist in Cascade's local storage across reloads and tabs. Short-lived results stay in memory.
 
-This is an unofficial community project, not affiliated with or endorsed by Cascade Bicycle Club. Ride availability and details come from Cascade; always check the original ride page before attending.
+This is an unofficial community project, not affiliated with or endorsed by Cascade Bicycle Club. Ride availability and details come from Cascade; always check the original ride page before attending. AI tools were used to create this extension.
 
 ## Privacy practices
 
@@ -61,31 +67,40 @@ Confirm the dashboard's limited-use certifications only after reviewing the code
 
 1. Open https://cascade.org/rides-events/ride-event-search?f%5B0%5D=event_type%3A21.
 2. The calendar appears by default. No login or special account is required to view public rides.
-3. Navigate months with the arrow buttons, Today, or Go to date.
+3. Navigate months with the arrow buttons, Today, or Go to date. The calendar includes rides in visible neighboring-month days.
 4. Expand By Pace on the left and select a pace; the calendar follows the site's filters.
-5. Use the List / Calendar toggle at the top right to restore the original list and page width, then switch back. The selected view is highlighted.
+5. Use the List / Calendar toggle at the top right to restore the original list and page width, then switch back. The selected highlight slides between views; the choice persists across reloads and tabs.
+6. Use the icon beside Go to date to collapse busy days into internally scrolling cells, then expand them again. Expanded is the first-use default; your choice persists.
+7. While results load, a spinner appears immediately to the right of that icon. Hover for its tooltip. Successful loading hides the spinner without displaying a ride count.
+8. Past rides fade after their start time; hover or keyboard-focus a ride to restore full opacity. A narrow From/To range still limits rides within the displayed weeks.
 
 Cancellation markers and multi-pace groups depend on currently published rides. They are visible whenever Cascade supplies matching data. Dark Reader is optional and not required for the extension to work.
 
 ## Images
 
-- Store icon: `extension\icons\icon-128.png`.
+- Store icon: `extension/icons/icon-128.png`.
 - Screenshots: the five PNG files in this folder, each 1280 x 800 pixels.
-- The source calendar-and-bike artwork is `assets\icon.svg`.
-- The high-resolution cancellation capture is `assets\cancelled-ride.png`; other screenshot sources are in `docs`.
-- Close-up ride-name and time captures are `assets\store-pace-colors.png` and `assets\store-pace-order.png`.
+- The source calendar-and-bike artwork is `assets/icon.svg`.
+- The high-resolution cancellation capture is `assets/cancelled-ride.png`; README screenshots and toolbar/grid captures are in `docs`.
+- The full-month overview uses `assets/store-full-month.png`, showing all seven columns and every displayed week.
+- Close-up ride-name and time captures are `assets/store-pace-colors.png` and `assets/store-pace-order.png`.
+- The pace-filter slide uses `assets/store-filter-sidebar.png` and `assets/store-filter-calendar.png`.
+- The dark-mode slide focuses on upcoming rides from `assets/store-upcoming-week-dark.png`, alongside actual toolbar and weekday captures.
+- Five refreshed overview graphics are in `share`; upload the focused images in `store` to the Web Store.
 
-Screenshots use focused crops of actual calendar captures, designed to remain readable when the store displays them at 640 x 400. Upload the 1280 x 800 originals for sharpness. No fabricated ride data is used.
+The first image shows the whole month. Other slides use focused crops of actual calendar captures, designed to keep ride details readable at 640 x 400. Upload the 1280 x 800 originals for sharpness. No fabricated ride data is used.
+
+Run `node ./scripts/capture-screenshots.js` to refresh the live captures with the unpacked extension, then `node ./scripts/generate-store-images.js` to rebuild the store images and share graphics. Captures use Pacific time, the next month's full visible weeks, and currently published ride examples. The full-month and dark-mode images show compact mode; expanded days remain the first-use default.
 
 ## Final submission checklist
 
 1. Review the listing text, especially data disclosures.
 2. Upload the ZIP and enter the listing fields.
-3. Upload the icon and screenshots.
+3. Upload the icon and the five refreshed screenshots from `store`.
 4. Choose distribution countries and visibility.
 5. Complete Privacy practices and meet the applicable policy requirements.
 6. Add reviewer instructions and submit for review.
 
-The extension has not been uploaded or submitted automatically. Future uploads must increase `extension\manifest.json`'s version above the last version uploaded.
+The extension has not been uploaded or submitted automatically. Future uploads must increase `extension/manifest.json`'s version above the last version uploaded.
 
 Official guidance: https://developer.chrome.com/docs/webstore/prepare, https://developer.chrome.com/docs/webstore/images, and https://developer.chrome.com/docs/webstore/cws-dashboard-privacy.
