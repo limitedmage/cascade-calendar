@@ -37,7 +37,7 @@ Ride times follow Cascade's Pacific dates. Busy days expand to show every ride; 
 
 Works on https://cascade.org/rides-events/ride-event-search. The extension does not run on other sites.
 
-Privacy: website content and search/filter selections are handled to render the calendar. Ride requests go only to Cascade over HTTPS. The list/calendar choice stays in the current tab's session storage; the expand/collapse preference persists in Cascade's local storage. Short-lived results stay in memory. No developer server, analytics, ads, or remotely executed code.
+Privacy: website content and search/filter selections are handled to render the calendar. Ride requests go only to Cascade over HTTPS. Both the calendar/list and expand/collapse preferences persist in Cascade's local storage. Short-lived results stay in memory. No developer server, analytics, ads, or remotely executed code.
 
 This is an unofficial community project, not affiliated with or endorsed by Cascade Bicycle Club. Ride availability and details come from Cascade; always check the original ride page before attending.
 
@@ -60,10 +60,10 @@ Confirm the dashboard's limited-use certifications only after reviewing the code
 ## Reviewer instructions
 
 1. Open https://cascade.org/rides-events/ride-event-search?f%5B0%5D=event_type%3A21.
-2. Click Show calendar. No login or special account is required to view public rides.
+2. The calendar appears by default. No login or special account is required to view public rides.
 3. Navigate months with the arrow buttons, Today, or Go to date.
 4. Expand By Pace on the left and select a pace; the calendar follows the site's filters.
-5. Click Show default list to restore the original list and page width.
+5. Turn off the Calendar view toggle at the top right to restore the original list and page width; turn it on to switch back.
 
 Cancellation markers and multi-pace groups depend on currently published rides. They are visible whenever Cascade supplies matching data. Dark Reader is optional and not required for the extension to work.
 

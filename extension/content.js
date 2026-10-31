@@ -9,9 +9,9 @@
   const FORM = "#views-exposed-form-rides-events-search-mainblock";
   const PREFERENCE = "cascade-calendar-view";
   const EXPANSION_PREFERENCE = "cascade-calendar-expanded";
-  let calendarMode = false;
+  let calendarMode = true;
   try {
-    calendarMode = sessionStorage.getItem(PREFERENCE) === "calendar";
+    calendarMode = localStorage.getItem(PREFERENCE) !== "list";
   } catch {}
   let expanded = true;
   try {
@@ -27,6 +27,8 @@
   let signature = "";
   const cache = new Map();
   const PACE_ORDER = ["easy", "leisurely", "steady", "moderate", "brisk", "vigorous", "strenuous", "super-strenuous", "self-paced"];
+  const EXPAND_ICON = "M160-80v-80h640v80H160Zm320-120L320-360l56-56 64 62v-252l-64 62-56-56 160-160 160 160-56 56-64-62v252l64-62 56 56-160 160ZM160-800v-80h640v80H160Z";
+  const COMPRESS_ICON = "M160-400v-80h640v80H160Zm0-120v-80h640v80H160ZM440-80v-128l-64 64-56-56 160-160 160 160-56 56-64-62v126h-80Zm40-560L320-800l56-56 64 64v-128h80v128l64-64 56 56-160 160Z";
 
   const element = (tag, className, text) => {
     const node = document.createElement(tag);
@@ -207,7 +209,7 @@
     const cached = cache.get(key);
     const complete = (count) => {
       status.textContent = count
-        ? `${count} free group ride${count === 1 ? "" : "s"}. Times are Pacific. All results pages included.`
+        ? `${count} free group ride${count === 1 ? "" : "s"}.`
         : "No free group rides match your filters this month.";
     };
     if (cached && Date.now() - cached.time < 60000) {
@@ -290,14 +292,14 @@
   }
 
   function setMode(enabled) {
+    const focused = document.activeElement === toggle;
     calendarMode = enabled;
-    try {
-      sessionStorage.setItem(PREFERENCE, enabled ? "calendar" : "list");
-    } catch {}
-    toggle.textContent = enabled ? "Show default list" : "Show calendar";
-    toggle.setAttribute("aria-pressed", String(enabled));
+    toggle.setAttribute("aria-checked", String(enabled));
     block.classList.toggle("cc-list-hidden", enabled);
     panel.hidden = !enabled;
+    if (enabled) panel.querySelector(".cc-toolbar").append(toggle);
+    else host.prepend(toggle);
+    if (focused) toggle.focus();
     if (enabled) load();
     else controller?.abort();
   }
@@ -309,7 +311,7 @@
     sizeToggle.setAttribute("aria-label", label);
     sizeToggle.setAttribute("aria-expanded", String(enabled));
     sizeToggle.title = label;
-    panel.querySelector(".cc-help").textContent = `Use the sidebar filters to narrow rides.${enabled ? "" : " Scroll within busy days to see every ride."} Month navigation updates From and To; other filters are kept.`;
+    sizeToggle.querySelector("path").setAttribute("d", enabled ? COMPRESS_ICON : EXPAND_ICON);
   }
 
   function mount(nextBlock) {
@@ -324,11 +326,18 @@
     month = new Date(initial.getFullYear(), initial.getMonth(), 1);
     host = element("div", "cc-root");
     host.id = "cascade-ride-calendar";
-    const viewBar = element("div", "cc-view-bar");
-    viewBar.append(element("span", "cc-view-label", "Free group rides"));
-    toggle = button("Show calendar", null, () => setMode(!calendarMode));
+    toggle = button("Calendar view", null, () => {
+      setMode(!calendarMode);
+      try {
+        localStorage.setItem(PREFERENCE, calendarMode ? "calendar" : "list");
+      } catch {}
+    });
+    toggle.classList.add("cc-view-toggle");
+    toggle.setAttribute("role", "switch");
     toggle.setAttribute("aria-controls", "cc-calendar-panel");
-    viewBar.append(toggle);
+    const track = element("span", "cc-view-track");
+    track.setAttribute("aria-hidden", "true");
+    toggle.prepend(track);
     panel = element("section", "cc-panel");
     panel.id = "cc-calendar-panel";
     panel.setAttribute("aria-label", "Free group ride calendar");
@@ -364,9 +373,13 @@
       } catch {}
     });
     sizeToggle.classList.add("cc-size-toggle");
-    const divider = element("span", "cc-size-divider");
-    divider.setAttribute("aria-hidden", "true");
-    sizeToggle.append(divider);
+    const icon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    icon.classList.add("cc-size-icon");
+    icon.setAttribute("viewBox", "0 -960 960 960");
+    icon.setAttribute("aria-hidden", "true");
+    icon.setAttribute("focusable", "false");
+    icon.append(document.createElementNS("http://www.w3.org/2000/svg", "path"));
+    sizeToggle.append(icon);
     sizeToggle.setAttribute("aria-controls", "cc-calendar-grid");
     const dateControls = element("div", "cc-date-controls");
     dateControls.append(label, sizeToggle);
@@ -381,8 +394,8 @@
     const grid = element("div", "cc-grid");
     grid.id = "cc-calendar-grid";
     scroll.append(grid);
-    panel.append(toolbar, element("p", "cc-help", "Use the sidebar filters to narrow rides. Month navigation updates From and To; other filters are kept."), status, retry, scroll);
-    host.append(viewBar, panel);
+    panel.append(toolbar, status, retry, scroll);
+    host.append(toggle, panel);
     block.before(host);
     setExpanded(expanded);
     setMode(calendarMode);

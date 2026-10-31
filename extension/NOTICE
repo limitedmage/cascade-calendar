@@ -20,3 +20,9 @@ https://github.com/limitedmage/cascade-calendar
 This is an unofficial community project, not affiliated with or endorsed
 by Cascade Bicycle Club. Third-party names, logos, and ride content remain
 subject to their respective owners' rights.
+
+The expand and compress icon paths in content.js are from Google's
+Material Symbols Outlined, licensed under the Apache License, Version 2.0.
+Unmodified path data is adapted for inline SVG rendering and theme colors.
+The Apache license is included in icons/material-symbols-LICENSE.txt.
+Source: https://github.com/google/material-design-icons

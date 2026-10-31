@@ -26,7 +26,7 @@ const pageHtml = (url, body) => `<!doctype html><html><body>
     <button type="submit">Search</button>
   </form></aside><main>${body}</main></body></html>`;
 
-async function setup(page, respond) {
+async function setup(page, respond, initialView = "list") {
   const requests = [];
   await page.clock.setFixedTime(new Date("2026-10-31T14:00:00Z"));
   await page.route(`${origin}${route}**`, async (route) => {
@@ -38,6 +38,15 @@ async function setup(page, respond) {
     const body = response.body ?? results(card(1, "Morning ride", "2026-10-31"));
     await route.fulfill({ contentType: "text/html", body: pageHtml(url, body) });
   });
+  if (initialView) {
+    await page.addInitScript((view) => {
+      try {
+        if (localStorage.getItem("cascade-calendar-view") === null) {
+          localStorage.setItem("cascade-calendar-view", view);
+        }
+      } catch {}
+    }, initialView);
+  }
   // Simulate Chrome's content-script injection on each full-page navigation.
   await page.addInitScript({ path: path.resolve("extension\\content.js") });
   page.on("domcontentloaded", async () => {
@@ -45,6 +54,35 @@ async function setup(page, respond) {
   });
   return requests;
 }
+
+test("defaults to calendar and saves the selected view in local storage across reloads and tabs", async ({ page, context }) => {
+  await setup(page, undefined, null);
+  await page.goto(`${origin}${route}`);
+  await expect(page.locator("#cc-calendar-panel")).toBeVisible();
+  await expect(page.locator(`#${resultsId}`)).toBeHidden();
+  await expect(page.locator(".cc-toolbar > :last-child")).toHaveText("Calendar view");
+  await expect(page.getByRole("switch", { name: "Calendar view", exact: true })).toHaveAttribute("aria-checked", "true");
+  expect(await page.getByRole("switch").evaluate((node) =>
+    Math.abs(node.getBoundingClientRect().right - node.closest(".cc-root").getBoundingClientRect().right))).toBeLessThan(1);
+  await page.getByRole("switch", { name: "Calendar view", exact: true }).click();
+  expect(await page.evaluate(() => localStorage.getItem("cascade-calendar-view"))).toBe("list");
+  expect(await page.evaluate(() => sessionStorage.getItem("cascade-calendar-view"))).toBeNull();
+  await page.reload();
+  await expect(page.locator(`#${resultsId}`)).toBeVisible();
+  await expect(page.getByRole("switch", { name: "Calendar view", exact: true })).toHaveAttribute("aria-checked", "false");
+  expect(await page.getByRole("switch").evaluate((node) =>
+    Math.abs(node.getBoundingClientRect().right - node.closest(".cc-root").getBoundingClientRect().right))).toBeLessThan(1);
+  const other = await context.newPage();
+  await setup(other, undefined, null);
+  await other.goto(`${origin}${route}`);
+  await expect(other.getByRole("switch", { name: "Calendar view", exact: true })).toHaveAttribute("aria-checked", "false");
+  await expect(other.locator(`#${resultsId}`)).toBeVisible();
+  await other.close();
+  await page.getByRole("switch", { name: "Calendar view", exact: true }).click();
+  await page.reload();
+  await expect(page.locator("#cc-calendar-panel")).toBeVisible();
+  await expect(page.locator(`#${resultsId}`)).toBeHidden();
+});
 
 test("toggles original list and loads every page with safe links and Pacific dates", async ({ page }) => {
   await setup(page, (url, request) => {
@@ -57,8 +95,12 @@ test("toggles original list and loads every page with safe links and Pacific dat
   });
   await page.goto(`${origin}${route}?f%5B0%5D=event_type%3A21`);
   await expect(page.locator(`#${resultsId}`)).toBeVisible();
-  await page.getByRole("button", { name: "Show calendar", exact: true }).click();
-  await expect(page.getByRole("status")).toContainText("2 free group rides");
+  await page.getByRole("switch", { name: "Calendar view", exact: true }).focus();
+  await page.keyboard.press("Enter");
+  await expect(page.locator(".cc-toolbar").getByRole("switch", { name: "Calendar view", exact: true })).toBeFocused();
+  await expect(page.locator(".cc-toolbar > :last-child")).toHaveText("Calendar view");
+  await expect(page.locator(".cc-view-label, .cc-help")).toHaveCount(0);
+  await expect(page.getByRole("status")).toHaveText("2 free group rides.");
   await expect(page.locator(`#${resultsId}`)).toBeHidden();
   const day = page.locator('.cc-day[data-date="2026-10-31"]');
   await expect(day.locator(".cc-ride")).toHaveCount(2);
@@ -66,15 +108,17 @@ test("toggles original list and loads every page with safe links and Pacific dat
   await expect(day.locator("img")).toHaveCount(0);
   await expect(day.locator(".cc-ride").first()).toHaveAttribute("href", `${origin}/rides-events/1`);
   await expect(day.locator("time")).toHaveAttribute("aria-current", "date");
-  await page.getByRole("button", { name: "Show default list" }).click();
+  await page.getByRole("switch", { name: "Calendar view", exact: true }).click();
   await expect(page.locator(`#${resultsId}`)).toBeVisible();
   await expect(page.locator("#cc-calendar-panel")).toBeHidden();
+  await expect(page.getByRole("switch", { name: "Calendar view", exact: true })).toBeVisible();
+  await expect(page.getByRole("switch", { name: "Calendar view", exact: true })).toBeFocused();
 });
 
 test("navigates months and dates, preserving facets and applying sidebar bounds", async ({ page }) => {
   const requests = await setup(page, () => ({ body: results("") }));
   await page.goto(`${origin}${route}?f%5B0%5D=event_type%3A21&f%5B1%5D=field_ride_pace%3A14&search_api_fulltext=coffee&date_from=10%2F15%2F2026&date_to=10%2F20%2F2026&page=2`);
-  await page.getByRole("button", { name: "Show calendar", exact: true }).click();
+  await page.getByRole("switch", { name: "Calendar view", exact: true }).click();
   await expect(page.getByRole("status")).toContainText("No free group rides");
   const fetch = requests.find((entry) => !entry.navigation).url;
   expect(fetch.searchParams.get("date_from")).toBe("10/15/2026");
@@ -97,7 +141,7 @@ test("navigates months and dates, preserving facets and applying sidebar bounds"
   await page.getByLabel("To", { exact: true }).fill("11/05/2026");
   await page.getByRole("button", { name: "Search", exact: true }).click();
   await expect(page.locator(".cc-heading")).toHaveText("November 2026");
-  await expect(page.getByRole("button", { name: "Show default list" })).toBeVisible();
+  await expect(page.getByRole("switch", { name: "Calendar view", exact: true })).toBeVisible();
 });
 
 test("labels partial results after pagination failure and retries", async ({ page }) => {
@@ -108,7 +152,7 @@ test("labels partial results after pagination failure and retries", async ({ pag
     return { body: results(card(1, "First page", "2026-10-31"), `${route}?page=1`) };
   });
   await page.goto(`${origin}${route}`);
-  await page.getByRole("button", { name: "Show calendar", exact: true }).click();
+  await page.getByRole("switch", { name: "Calendar view", exact: true }).click();
   await expect(page.getByRole("status")).toContainText("Could not load the complete calendar");
   await expect(page.locator(".cc-ride")).toHaveCount(1);
   await expect(page.getByRole("status")).toContainText("more may be missing");
@@ -121,7 +165,7 @@ test("remounts after Drupal replaces results and remains usable on mobile", asyn
   await setup(page);
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto(`${origin}${route}`);
-  await page.getByRole("button", { name: "Show calendar", exact: true }).click();
+  await page.getByRole("switch", { name: "Calendar view", exact: true }).click();
   await expect(page.getByRole("status")).toContainText("1 free group ride");
   await page.evaluate((html) => {
     document.querySelector("#block-views-block-rides-events-search-mainblock").outerHTML = html;
@@ -130,7 +174,7 @@ test("remounts after Drupal replaces results and remains usable on mobile", asyn
   await expect(page.locator(`#${resultsId}`)).toBeHidden();
   await expect(page.getByRole("status")).toContainText("1 free group ride");
   expect(await page.locator(".cc-scroll").evaluate((node) => node.scrollWidth > node.clientWidth)).toBe(true);
-  await page.getByRole("button", { name: "Show default list" }).click();
+  await page.getByRole("switch", { name: "Calendar view", exact: true }).click();
   await expect(page.locator(`#${resultsId}`)).toContainText("Updated Drupal listing");
 });
 
@@ -139,7 +183,7 @@ test("expands busy days or collapses them to scrolling cells without reloading r
     body: results(Array.from({ length: 15 }, (_, index) => card(index, `Ride ${index}`, "2026-10-31")).join("")),
   }));
   await page.goto(`${origin}${route}`);
-  await page.getByRole("button", { name: "Show calendar", exact: true }).click();
+  await page.getByRole("switch", { name: "Calendar view", exact: true }).click();
   await expect(page.getByRole("status")).toContainText("15 free group rides");
   const day = page.locator('.cc-day[data-date="2026-10-31"]');
   await expect(day.locator(".cc-ride")).toHaveCount(15);
@@ -153,29 +197,29 @@ test("expands busy days or collapses them to scrolling cells without reloading r
   expect(layout.height).toBeGreaterThan(220);
   const before = requests.length;
   const collapse = page.getByRole("button", { name: "Collapse calendar", exact: true });
+  const collapsePath = await collapse.locator("svg path").getAttribute("d");
   await expect(collapse).toHaveText("");
   await expect(collapse).toHaveAttribute("aria-expanded", "true");
   expect(await collapse.evaluate((node) => node.previousElementSibling.matches(".cc-jump"))).toBe(true);
   await collapse.focus();
   await page.keyboard.press("Enter");
   const expand = page.getByRole("button", { name: "Expand calendar", exact: true });
+  await expect(expand.locator("svg path")).not.toHaveAttribute("d", collapsePath);
   await expect(expand).toHaveAttribute("aria-expanded", "false");
   await expect(day).toHaveCSS("height", "220px");
   expect(await day.evaluate((node) => node.scrollHeight > node.clientHeight)).toBe(true);
   await expect(day.locator(".cc-ride")).toHaveCount(15);
-  await expect(page.locator(".cc-help")).toContainText("Scroll within busy days");
   await day.locator(".cc-ride").last().focus();
   expect(await day.evaluate((node) => node.scrollTop > 0)).toBe(true);
   await expand.click();
   expect(await day.evaluate((node) => node.scrollHeight > node.clientHeight)).toBe(false);
-  await expect(page.locator(".cc-help")).not.toContainText("Scroll within busy days");
   expect(requests.length).toBe(before);
 });
 
 test("saves calendar expansion in local storage across reloads, navigation, tabs, and remounts", async ({ page, context }) => {
   await setup(page);
   await page.goto(`${origin}${route}`);
-  await page.getByRole("button", { name: "Show calendar", exact: true }).click();
+  await page.getByRole("switch", { name: "Calendar view", exact: true }).click();
   await page.getByRole("button", { name: "Collapse calendar", exact: true }).click();
   expect(await page.evaluate(() => localStorage.getItem("cascade-calendar-expanded"))).toBe("false");
   await page.reload();
@@ -191,7 +235,7 @@ test("saves calendar expansion in local storage across reloads, navigation, tabs
   const other = await context.newPage();
   await setup(other);
   await other.goto(`${origin}${route}`);
-  await other.getByRole("button", { name: "Show calendar", exact: true }).click();
+  await expect(other.getByRole("switch", { name: "Calendar view", exact: true })).toHaveAttribute("aria-checked", "true");
   await expect(other.getByRole("button", { name: "Expand calendar", exact: true })).toBeVisible();
   await other.getByRole("button", { name: "Expand calendar", exact: true }).click();
   await page.evaluate((html) => {
@@ -204,17 +248,23 @@ test("saves calendar expansion in local storage across reloads, navigation, tabs
   await other.close();
 });
 
-test("keeps expansion usable when local storage is unavailable", async ({ page }) => {
+test("keeps both view and expansion usable when local storage is unavailable", async ({ page }) => {
   await setup(page);
   await page.addInitScript(() => {
-    Storage.prototype.getItem = Storage.prototype.setItem = () => { throw new Error("Storage unavailable"); };
+    Object.defineProperty(window, "localStorage", {
+      get() { throw new Error("Storage unavailable"); },
+    });
   });
   await page.goto(`${origin}${route}`);
-  await page.getByRole("button", { name: "Show calendar", exact: true }).click();
+  await expect(page.locator("#cc-calendar-panel")).toBeVisible();
   await page.getByRole("button", { name: "Collapse calendar", exact: true }).click();
   await expect(page.locator(".cc-day").first()).toHaveCSS("height", "220px");
   await page.getByRole("button", { name: "Expand calendar", exact: true }).click();
   await expect(page.locator(".cc-root")).not.toHaveClass(/cc-collapsed/);
+  await page.getByRole("switch", { name: "Calendar view", exact: true }).click();
+  await expect(page.locator("#cc-calendar-panel")).toBeHidden();
+  await page.getByRole("switch", { name: "Calendar view", exact: true }).click();
+  await expect(page.locator("#cc-calendar-panel")).toBeVisible();
 });
 
 test("shows existing rides immediately, renders pages progressively, and caches completed results", async ({ page }) => {
@@ -232,7 +282,7 @@ test("shows existing rides immediately, renders pages progressively, and caches 
     return { body: results(card(2, "First fetched page", "2026-10-31"), `${route}?page=1`) };
   });
   await page.goto(`${origin}${route}?f%5B0%5D=event_type%3A21`);
-  await page.getByRole("button", { name: "Show calendar", exact: true }).click();
+  await page.getByRole("switch", { name: "Calendar view", exact: true }).click();
   await expect(page.locator(".cc-ride")).toHaveCount(1);
   await expect(page.getByRole("status")).toContainText("not complete yet");
   await expect(page.locator("#cc-calendar-panel")).toHaveAttribute("aria-busy", "true");
@@ -240,12 +290,12 @@ test("shows existing rides immediately, renders pages progressively, and caches 
   await expect(page.locator(".cc-ride")).toHaveCount(2);
   await expect(page.getByRole("status")).toContainText("not complete yet");
   releaseLast();
-  await expect(page.getByRole("status")).toContainText("All results pages included");
+  await expect(page.locator("#cc-calendar-panel")).toHaveAttribute("aria-busy", "false");
   await expect(page.locator(".cc-ride")).toHaveCount(3);
   const before = requests.length;
-  await page.getByRole("button", { name: "Show default list" }).click();
-  await page.getByRole("button", { name: "Show calendar", exact: true }).click();
-  await expect(page.getByRole("status")).toContainText("All results pages included");
+  await page.getByRole("switch", { name: "Calendar view", exact: true }).click();
+  await page.getByRole("switch", { name: "Calendar view", exact: true }).click();
+  await expect(page.locator("#cc-calendar-panel")).toHaveAttribute("aria-busy", "false");
   expect(requests.length).toBe(before);
 });
 
@@ -261,13 +311,13 @@ test("reuses the loaded first page and requests known remaining pages concurrent
     return { body: results(card(+url.searchParams.get("page") + 1, `Page ${url.searchParams.get("page")}`, "2026-10-31")) };
   });
   await page.goto(`${origin}${route}?f%5B0%5D=event_type%3A21&date_from=10%2F01%2F2026&date_to=10%2F31%2F2026`);
-  await page.getByRole("button", { name: "Show calendar", exact: true }).click();
+  await page.getByRole("switch", { name: "Calendar view", exact: true }).click();
   await expect(page.locator(".cc-ride")).toHaveCount(1);
   await expect.poll(() => requests.filter((entry) => !entry.navigation).length).toBe(2);
   expect(requests.filter((entry) => !entry.navigation).map((entry) => entry.url.searchParams.get("page")).sort()).toEqual(["1", "2"]);
   release();
   await expect(page.getByRole("status")).toContainText("3 free group rides");
-  await expect(page.getByRole("status")).toContainText("All results pages included");
+  await expect(page.locator("#cc-calendar-panel")).toHaveAttribute("aria-busy", "false");
 });
 
 async function expectReadableCalendar(page, selectors = [".cc-day:not(.cc-outside)", ".cc-outside", ".cc-weekday", ".cc-ride", ".cc-ride-meta", ".cc-button", ".cc-root input", ".cc-today .cc-day-number"]) {
@@ -306,8 +356,8 @@ test("fades rides after their start time and updates visible and cached calendar
     ),
   }));
   await page.goto(`${origin}${route}?f%5B0%5D=event_type%3A21`);
-  await page.getByRole("button", { name: "Show calendar", exact: true }).click();
-  await expect(page.getByRole("status")).toContainText("All results pages included");
+  await page.getByRole("switch", { name: "Calendar view", exact: true }).click();
+  await expect(page.locator("#cc-calendar-panel")).toHaveAttribute("aria-busy", "false");
   for (const id of [1, 2]) {
     await expect(page.locator(`.cc-ride[href$="/${id}"]`)).toHaveCSS("opacity", "0.6");
   }
@@ -325,11 +375,11 @@ test("fades rides after their start time and updates visible and cached calendar
   await page.locator('.cc-ride[href$="/4"]').focus();
   await expect(past).toHaveCSS("opacity", "0.6");
 
-  await page.getByRole("button", { name: "Show default list" }).click();
+  await page.getByRole("switch", { name: "Calendar view", exact: true }).click();
   await page.clock.setSystemTime(new Date("2026-10-31T14:00:30Z"));
   const before = requests.length;
-  await page.getByRole("button", { name: "Show calendar", exact: true }).click();
-  await expect(page.getByRole("status")).toContainText("All results pages included");
+  await page.getByRole("switch", { name: "Calendar view", exact: true }).click();
+  await expect(page.locator("#cc-calendar-panel")).toHaveAttribute("aria-busy", "false");
   expect(requests.length).toBe(before);
   await expect(page.locator('.cc-ride[href$="/3"]')).toHaveCSS("opacity", "0.6");
   await expect(page.locator('.cc-ride[href$="/4"]')).toHaveCSS("opacity", "1");
@@ -349,8 +399,8 @@ test.describe("past rides in another browser timezone", () => {
     }));
     await page.clock.setFixedTime(new Date("2026-11-01T09:00:00Z"));
     await page.goto(`${origin}${route}?f%5B0%5D=event_type%3A21&date_from=11%2F01%2F2026&date_to=11%2F30%2F2026`);
-    await page.getByRole("button", { name: "Show calendar", exact: true }).click();
-    await expect(page.getByRole("status")).toContainText("All results pages included");
+    await page.getByRole("switch", { name: "Calendar view", exact: true }).click();
+    await expect(page.locator("#cc-calendar-panel")).toHaveAttribute("aria-busy", "false");
     await expect(page.locator('.cc-ride[href$="/1"]')).toHaveCSS("opacity", "0.6");
     await expect(page.locator('.cc-ride[href$="/2"]')).toHaveCSS("opacity", "1");
   });
@@ -359,8 +409,8 @@ test.describe("past rides in another browser timezone", () => {
 test("responds to Dark Reader's scheme attribute without changing light mode", async ({ page }) => {
   await setup(page);
   await page.goto(`${origin}${route}?f%5B0%5D=event_type%3A21`);
-  await page.getByRole("button", { name: "Show calendar", exact: true }).click();
-  await expect(page.getByRole("status")).toContainText("All results pages included");
+  await page.getByRole("switch", { name: "Calendar view", exact: true }).click();
+  await expect(page.locator("#cc-calendar-panel")).toHaveAttribute("aria-busy", "false");
   const day = page.locator(".cc-day:not(.cc-outside)").first();
   await expect(day).toHaveCSS("background-color", "rgb(255, 255, 255)");
   await page.evaluate(() => document.documentElement.dataset.darkreaderScheme = "dark");
@@ -384,8 +434,8 @@ test("stays readable with Dark Reader's dynamic rendering engine enabled", async
     DarkReader.enable({ brightness: 100, contrast: 100, sepia: 0 });
   });
   await expect(page.locator("html")).toHaveAttribute("data-darkreader-scheme", "dark");
-  await page.getByRole("button", { name: "Show calendar", exact: true }).click();
-  await expect(page.getByRole("status")).toContainText("All results pages included");
+  await page.getByRole("switch", { name: "Calendar view", exact: true }).click();
+  await expect(page.locator("#cc-calendar-panel")).toHaveAttribute("aria-busy", "false");
   await expect(page.locator(".cc-root")).toHaveCSS("color-scheme", "dark");
   await expectReadableCalendar(page);
   await page.locator(".cc-ride").first().hover();
@@ -418,8 +468,8 @@ test("colors rides by their final pace label and keeps upcoming rides readable i
   }));
   await page.clock.setFixedTime(new Date("2026-10-01T14:00:00Z"));
   await page.goto(`${origin}${route}?f%5B0%5D=event_type%3A21`);
-  await page.getByRole("button", { name: "Show calendar", exact: true }).click();
-  await expect(page.getByRole("status")).toContainText("All results pages included");
+  await page.getByRole("switch", { name: "Calendar view", exact: true }).click();
+  await expect(page.locator("#cc-calendar-panel")).toHaveAttribute("aria-busy", "false");
   for (const [index, [, pace, color, surface]] of paces.entries()) {
     const ride = page.locator(`.cc-ride[href$="/${index}"]`);
     await expect(ride).toHaveAttribute("data-pace", pace);
@@ -480,15 +530,15 @@ test("widens only the calendar layout, retains sidebar width, and restores the l
   const width = (node) => node.evaluate((element) => element.getBoundingClientRect().width);
   const original = await width(content);
   await expect(layout).toHaveCSS("width", "1280px");
-  await page.getByRole("button", { name: "Show calendar", exact: true }).click();
+  await page.getByRole("switch", { name: "Calendar view", exact: true }).click();
   await expect(layout).toHaveCSS("width", "1920px");
   expect(await width(content)).toBeGreaterThan(original + 500);
   await expect(page.locator("aside")).toHaveCSS("width", "280px");
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-  await page.getByRole("button", { name: "Show default list" }).click();
+  await page.getByRole("switch", { name: "Calendar view", exact: true }).click();
   await expect(layout).toHaveCSS("width", "1280px");
   expect(await width(content)).toBe(original);
-  await page.getByRole("button", { name: "Show calendar", exact: true }).click();
+  await page.getByRole("switch", { name: "Calendar view", exact: true }).click();
   await page.setViewportSize({ width: 390, height: 844 });
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   expect(await page.locator(".cc-scroll").evaluate((node) => node.scrollWidth > node.clientWidth)).toBe(true);
@@ -498,7 +548,7 @@ test("uses accessible month icons and keeps the date control together on narrow 
   await setup(page);
   await page.setViewportSize({ width: 320, height: 844 });
   await page.goto(`${origin}${route}?f%5B0%5D=event_type%3A21`);
-  await page.getByRole("button", { name: "Show calendar", exact: true }).click();
+  await page.getByRole("switch", { name: "Calendar view", exact: true }).click();
   const previous = page.getByRole("button", { name: "Previous month", exact: true });
   const next = page.getByRole("button", { name: "Next month", exact: true });
   await expect(previous).toHaveText("");
@@ -535,8 +585,8 @@ test("marks cancelled rides while crossing out only their names", async ({ page 
     ),
   }));
   await page.goto(`${origin}${route}?f%5B0%5D=event_type%3A21`);
-  await page.getByRole("button", { name: "Show calendar", exact: true }).click();
-  await expect(page.getByRole("status")).toContainText("All results pages included");
+  await page.getByRole("switch", { name: "Calendar view", exact: true }).click();
+  await expect(page.locator("#cc-calendar-panel")).toHaveAttribute("aria-busy", "false");
   for (const id of [1, 2, 3]) {
     const ride = page.locator(`.cc-ride[href$="/${id}"]`);
     await expect(ride.locator(".cc-cancelled-label")).toHaveText("CANCELLED");
@@ -558,7 +608,7 @@ test("marks cancelled rides while crossing out only their names", async ({ page 
   });
   await expect(page.locator("html")).toHaveAttribute("data-darkreader-scheme", "dark");
   await expectReadableCalendar(page, [".cc-cancelled-label"]);
-  await page.getByRole("button", { name: "Show default list" }).click();
+  await page.getByRole("switch", { name: "Calendar view", exact: true }).click();
   await expect(page.locator(`#${resultsId} .card-title`).first()).toHaveCSS("text-decoration-line", "none");
 });
 
@@ -579,8 +629,8 @@ test("sorts same-name rides at the same time by pace across results pages", asyn
       ),
   }));
   await page.goto(`${origin}${route}?f%5B0%5D=event_type%3A21`);
-  await page.getByRole("button", { name: "Show calendar", exact: true }).click();
-  await expect(page.getByRole("status")).toContainText("All results pages included");
+  await page.getByRole("switch", { name: "Calendar view", exact: true }).click();
+  await expect(page.locator("#cc-calendar-panel")).toHaveAttribute("aria-busy", "false");
   const expected = [
     "Zebra (Vigorous)",
     "Alpha (Strenuous)",
@@ -589,8 +639,8 @@ test("sorts same-name rides at the same time by pace across results pages", asyn
     "Lake Loop (Tour) (Easy)",
   ];
   await expect(page.locator('.cc-day[data-date="2026-10-31"] .cc-ride-title')).toHaveText(expected);
-  await page.getByRole("button", { name: "Show default list" }).click();
-  await page.getByRole("button", { name: "Show calendar", exact: true }).click();
+  await page.getByRole("switch", { name: "Calendar view", exact: true }).click();
+  await page.getByRole("switch", { name: "Calendar view", exact: true }).click();
   await expect(page.locator('.cc-day[data-date="2026-10-31"] .cc-ride-title')).toHaveText(expected);
 });
 
@@ -598,7 +648,7 @@ test("keeps the date input compact despite Cascade's form-control styles", async
   await setup(page);
   await page.goto(`${origin}${route}?f%5B0%5D=event_type%3A21`);
   await page.addStyleTag({ content: `input[type="date"] { height: 48px; min-height: 48px; font: 16px/24px sans-serif; padding: 10px; }` });
-  await page.getByRole("button", { name: "Show calendar", exact: true }).click();
+  await page.getByRole("switch", { name: "Calendar view", exact: true }).click();
   const date = page.getByLabel("Go to date", { exact: false });
   await expect(date).toHaveCSS("height", "36px");
   await expect(date).toHaveCSS("font-size", "14px");
@@ -618,7 +668,7 @@ test("aligns the date label with the month despite Cascade's label margins", asy
   await page.setViewportSize({ width: 1280, height: 900 });
   await page.goto(`${origin}${route}?f%5B0%5D=event_type%3A21`);
   await page.addStyleTag({ content: `label { margin-bottom: 8px; font: 500 16px/1.4 sans-serif; }` });
-  await page.getByRole("button", { name: "Show calendar", exact: true }).click();
+  await page.getByRole("switch", { name: "Calendar view", exact: true }).click();
   const offset = await page.locator(".cc-toolbar").evaluate((toolbar) => {
     const textCenter = (node) => {
       const range = document.createRange();

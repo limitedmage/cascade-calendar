@@ -48,9 +48,9 @@ The calendar adapts automatically to Dark Reader, keeping pace colors, controls,
 
 1. Open `chrome://extensions` and enable **Developer mode**.
 2. Click **Load unpacked** and select this repository's `extension` folder.
-3. Open Cascade's ride search and click **Show calendar**.
+3. Open Cascade's ride search; the calendar appears by default.
 
-Use **Previous**, **Next**, **Today**, or **Go to date** to navigate. Navigation reloads the page with the sidebar's From/To filters set to the selected month, retaining search, pace, terrain, and other filters. The view choice persists within the tab. **Show default list** restores Cascade's original view.
+Use **Previous**, **Next**, **Today**, or **Go to date** to navigate. Navigation reloads the page with the sidebar's From/To filters set to the selected month, retaining search, pace, terrain, and other filters. The **Calendar view** toggle at the top right switches between the calendar (on) and Cascade's original list (off). The choice is saved in Cascade's local storage across reloads and tabs; calendar is the default until you choose otherwise.
 
 Calendar mode uses the full available page width on desktop, with a compact filter sidebar. Switching back to the list restores Cascade's original page width and layout.
 
@@ -98,3 +98,5 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup, testing, and pull 
 The project's original code and artwork are licensed under [GNU GPLv3-only](https://www.gnu.org/licenses/gpl-3.0.html) (`GPL-3.0-only`). Commercial use is permitted; distributed derivatives must comply with GPLv3, including its corresponding-source requirements.
 
 Third-party names, logos, and Cascade ride content are not relicensed by this project.
+
+The expand/collapse icons use Google's [Material Symbols](https://github.com/google/material-design-icons), under [Apache-2.0](extension/icons/material-symbols-LICENSE.txt).
