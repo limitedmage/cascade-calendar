@@ -12,6 +12,8 @@ This is 100% vibe-coded, use at your own risk. I tested it manually but have not
 
 See the whole month in complete weeks, including rides in the visible days before and after the month and from every results page. Navigate with the month arrows, Today, or Go to date.
 
+Use **Week starts on** below the calendar to choose a weekday or follow the browser's locale with **Browser default**. Your choice is saved across reloads and tabs.
+
 ![Month calendar in compact mode, with neighboring-month rides and the current toolbar](docs/calendar.png)
 
 ### Switch views without losing your place
@@ -51,7 +53,7 @@ Cancelled rides remain visible with a **CANCELLED** label and their name crossed
 
 ### Past rides fade
 
-After a ride's start time, its card fades to 60% opacity. Hovering or keyboard-focusing it restores full opacity so you can read its details. This updates automatically every minute.
+When rendered, rides whose start time has passed are faded to 60% opacity. Hovering or keyboard-focusing a card restores full opacity so you can read its details.
 
 | Past ride | Hovered past ride |
 |---|---|
@@ -93,7 +95,7 @@ Rides sort by start time, then name (excluding the final pace label). Same-name 
 
 Cancelled rides have their name crossed out and a separate **CANCELLED** label. Their time, details, pace colors, and link remain available. Cancellation is detected from Cascade's status tags or a cancellation marker in the ride title.
 
-Rides display at 60% opacity after their start time, checked every minute using Cascade's timestamp offsets. Past rides intentionally have reduced text contrast; hovering or keyboard-focusing one restores full opacity.
+Rides are checked for past start times only when rendered, using Cascade's timestamp offsets. Past rides display at 60% opacity and intentionally have reduced text contrast; hovering or keyboard-focusing one restores full opacity.
 
 ## Development
 

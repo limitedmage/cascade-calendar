@@ -9,6 +9,19 @@
   const FORM = "#views-exposed-form-rides-events-search-mainblock";
   const PREFERENCE = "cascade-calendar-view";
   const EXPANSION_PREFERENCE = "cascade-calendar-expanded";
+  const WEEK_START_PREFERENCE = "cascade-calendar-week-start";
+  const WEEKDAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+  let browserWeekStart = 1;
+  try {
+    const locale = new Intl.Locale(navigator.language);
+    browserWeekStart = (locale.getWeekInfo?.() ?? locale.weekInfo).firstDay % 7;
+  } catch {}
+  let weekPreference = "auto";
+  try {
+    const saved = localStorage.getItem(WEEK_START_PREFERENCE);
+    if (/^[0-6]$/.test(saved)) weekPreference = saved;
+  } catch {}
+  let weekStart = weekPreference === "auto" ? browserWeekStart : +weekPreference;
   let calendarMode = true;
   try {
     calendarMode = localStorage.getItem(PREFERENCE) !== "list";
@@ -43,8 +56,8 @@
   const calendarRange = (date) => {
     const first = new Date(date.getFullYear(), date.getMonth(), 1);
     const last = new Date(date.getFullYear(), date.getMonth() + 1, 0);
-    first.setDate(first.getDate() - (first.getDay() + 6) % 7);
-    last.setDate(last.getDate() + (7 - last.getDay()) % 7);
+    first.setDate(first.getDate() - (first.getDay() - weekStart + 7) % 7);
+    last.setDate(last.getDate() + (weekStart + 6 - last.getDay() + 7) % 7);
     return { first, last };
   };
   const parseFilter = (value) => {
@@ -147,8 +160,8 @@
   function render(rides) {
     const grid = panel.querySelector(".cc-grid");
     grid.replaceChildren();
-    for (const day of ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]) {
-      grid.append(element("div", "cc-weekday", day));
+    for (let index = 0; index < 7; index++) {
+      grid.append(element("div", "cc-weekday", WEEKDAYS[(weekStart + index) % 7].slice(0, 3)));
     }
     const { first, last } = calendarRange(month);
     const today = dateKey(pacificToday());
@@ -414,7 +427,33 @@
     const grid = element("div", "cc-grid");
     grid.id = "cc-calendar-grid";
     scroll.append(grid);
-    panel.append(toolbar, status, retry, scroll);
+    const settings = element("div", "cc-settings");
+    const weekLabel = element("label", "", "Week starts on");
+    weekLabel.htmlFor = "cc-week-start";
+    const weekSelect = element("select", "cc-week-start");
+    weekSelect.id = "cc-week-start";
+    const automatic = element("option", "", "Browser default");
+    automatic.value = "auto";
+    weekSelect.append(automatic);
+    WEEKDAYS.forEach((day, index) => {
+      const option = element("option", "", day);
+      option.value = String(index);
+      weekSelect.append(option);
+    });
+    weekSelect.value = weekPreference;
+    weekSelect.addEventListener("change", () => {
+      weekPreference = weekSelect.value;
+      try {
+        localStorage.setItem(WEEK_START_PREFERENCE, weekPreference);
+      } catch {}
+      const start = weekPreference === "auto" ? browserWeekStart : +weekPreference;
+      if (start !== weekStart) {
+        weekStart = start;
+        load();
+      }
+    });
+    settings.append(weekLabel, weekSelect);
+    panel.append(toolbar, status, retry, scroll, settings);
     host.append(toggle, panel);
     block.before(host);
     setExpanded(expanded);
@@ -446,8 +485,5 @@
     timer = setTimeout(reconcile, 100);
   });
   observer.observe(document.body, { childList: true, subtree: true });
-  setInterval(() => {
-    if (calendarMode) updatePastRides();
-  }, 60000);
   reconcile();
 })();

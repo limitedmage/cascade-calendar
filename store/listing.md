@@ -28,6 +28,7 @@ Bring a calendar view back to Cascade Bicycle Club's free group ride search.
 
 - See a full month of rides.
 - Include matching rides from every results page, not just the first page of the list.
+- Week start can be changed with the option under the calendar.
 - Start in calendar view by default, or switch to Cascade's original list.
 - Navigate with Previous, Next, Today, or Go to date.
 - Find matching rides with Cascade's sidebar filters, including pace.

@@ -183,44 +183,144 @@ test("toggles original list and loads every page with safe links and Pacific dat
   await expect(page.getByRole("switch", { name: "Calendar view", exact: true })).toBeFocused();
 });
 
-for (const { from, to, first, last, days } of [
+for (const { from, to, first, last, days, locale = "en-GB", weekdays = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"], info = "current", saved } of [
   { from: "10/01/2026", to: "10/31/2026", first: "2026-09-28", last: "2026-11-01", days: 35 },
   { from: "12/01/2026", to: "12/31/2026", first: "2026-11-30", last: "2027-01-03", days: 35 },
   { from: "02/01/2027", to: "02/28/2027", first: "2027-02-01", last: "2027-02-28", days: 28 },
+  { locale: "en-US", from: "10/01/2026", to: "10/31/2026", first: "2026-09-27", last: "2026-10-31", days: 35, weekdays: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] },
+  { locale: "en-US", from: "12/01/2026", to: "12/31/2026", first: "2026-11-29", last: "2027-01-02", days: 35, weekdays: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] },
+  { locale: "ar-AF", from: "10/01/2026", to: "10/31/2026", first: "2026-09-26", last: "2026-11-06", days: 42, weekdays: ["Sat", "Sun", "Mon", "Tue", "Wed", "Thu", "Fri"] },
+  { locale: "en-US", info: "unavailable", from: "10/01/2026", to: "10/31/2026", first: "2026-09-28", last: "2026-11-01", days: 35 },
+  { locale: "en-US", info: "legacy", from: "10/01/2026", to: "10/31/2026", first: "2026-09-27", last: "2026-10-31", days: 35, weekdays: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] },
+  { locale: "en-US", saved: "invalid", from: "10/01/2026", to: "10/31/2026", first: "2026-09-27", last: "2026-10-31", days: 35, weekdays: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] },
 ]) {
-  test(`shows complete Monday-to-Sunday weeks for ${from}, including boundary rides`, async ({ page }) => {
-    const monthStart = `${from.slice(6)}-${from.slice(0, 2)}-01`;
-    const monthly = card(1, "Month ride", monthStart);
-    const firstPage = results(monthly + card(2, "First visible day", first), `${route}?page=1`);
-    const requests = await setup(page, (url, request) => {
-      if (request.isNavigationRequest()) return { body: first === monthStart ? firstPage : results(monthly) };
-      if (url.searchParams.has("page")) return { body: results(card(3, "Last visible day", last)) };
-      return { body: firstPage };
+  test.describe(`${locale} weeks from ${from} (${info}${saved ? ", invalid preference" : ""})`, () => {
+    test.use({ locale });
+    test("shows complete weeks, including boundary rides", async ({ page }) => {
+      if (info !== "current" || saved) {
+        await page.addInitScript(({ info, saved }) => {
+          if (info !== "current") {
+            Object.defineProperty(Intl.Locale.prototype, "getWeekInfo", { configurable: true, value: undefined });
+            Object.defineProperty(Intl.Locale.prototype, "weekInfo", {
+              configurable: true,
+              get() { return info === "legacy" ? { firstDay: 7 } : undefined; },
+            });
+          }
+          if (saved) localStorage.setItem("cascade-calendar-week-start", saved);
+        }, { info, saved });
+      }
+      const monthStart = `${from.slice(6)}-${from.slice(0, 2)}-01`;
+      const monthly = card(1, "Month ride", monthStart);
+      const firstPage = results(monthly + card(2, "First visible day", first), `${route}?page=1`);
+      const requests = await setup(page, (url, request) => {
+        if (request.isNavigationRequest()) return { body: first === monthStart ? firstPage : results(monthly) };
+        if (url.searchParams.has("page")) return { body: results(card(3, "Last visible day", last)) };
+        return { body: firstPage };
+      });
+      await page.goto(`${origin}${route}?f%5B0%5D=event_type%3A21&date_from=${encodeURIComponent(from)}&date_to=${encodeURIComponent(to)}`);
+      await page.getByRole("switch", { name: "Calendar view", exact: true }).click();
+      await expect(page.locator("#cc-calendar-panel")).toHaveAttribute("aria-busy", "false");
+      await expect(page.getByLabel("Week starts on", { exact: true })).toHaveValue("auto");
+      await expect(page.locator(".cc-weekday")).toHaveText(weekdays);
+      await expect(page.locator(".cc-day")).toHaveCount(days);
+      await expect(page.locator(".cc-day").first()).toHaveAttribute("data-date", first);
+      await expect(page.locator(".cc-day").last()).toHaveAttribute("data-date", last);
+      await expect(page.locator(`.cc-day[data-date="${first}"] .cc-ride-title`)).toContainText(["First visible day"]);
+      await expect(page.locator(`.cc-day[data-date="${last}"] .cc-ride-title`)).toHaveText("Last visible day");
+      await expect(page.locator(".cc-ride")).toHaveCount(3);
+      const asFilter = (date) => `${date.slice(5, 7)}/${date.slice(8)}/${date.slice(0, 4)}`;
+      for (const { url } of requests.filter((entry) => !entry.navigation)) {
+        expect(url.searchParams.get("date_from")).toBe(asFilter(first));
+        expect(url.searchParams.get("date_to")).toBe(asFilter(last));
+        expect(url.searchParams.get("f[0]")).toBe("event_type:21");
+      }
+      await expect(page.locator(".cc-status")).toBeHidden();
+      await expect(page.locator(".cc-status")).toHaveText("");
+      const gap = await page.locator(".cc-toolbar").evaluate((toolbar) =>
+        toolbar.closest(".cc-panel").querySelector(".cc-scroll").getBoundingClientRect().top
+          - toolbar.getBoundingClientRect().bottom);
+      expect(gap).toBeGreaterThanOrEqual(12);
     });
-    await page.goto(`${origin}${route}?f%5B0%5D=event_type%3A21&date_from=${encodeURIComponent(from)}&date_to=${encodeURIComponent(to)}`);
-    await page.getByRole("switch", { name: "Calendar view", exact: true }).click();
-    await expect(page.locator("#cc-calendar-panel")).toHaveAttribute("aria-busy", "false");
-    await expect(page.locator(".cc-weekday")).toHaveText(["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]);
-    await expect(page.locator(".cc-day")).toHaveCount(days);
-    await expect(page.locator(".cc-day").first()).toHaveAttribute("data-date", first);
-    await expect(page.locator(".cc-day").last()).toHaveAttribute("data-date", last);
-    await expect(page.locator(`.cc-day[data-date="${first}"] .cc-ride-title`)).toContainText(["First visible day"]);
-    await expect(page.locator(`.cc-day[data-date="${last}"] .cc-ride-title`)).toHaveText("Last visible day");
-    await expect(page.locator(".cc-ride")).toHaveCount(3);
-    const asFilter = (date) => `${date.slice(5, 7)}/${date.slice(8)}/${date.slice(0, 4)}`;
-    for (const { url } of requests.filter((entry) => !entry.navigation)) {
-      expect(url.searchParams.get("date_from")).toBe(asFilter(first));
-      expect(url.searchParams.get("date_to")).toBe(asFilter(last));
-      expect(url.searchParams.get("f[0]")).toBe("event_type:21");
-    }
-    await expect(page.locator(".cc-status")).toBeHidden();
-    await expect(page.locator(".cc-status")).toHaveText("");
-    const gap = await page.locator(".cc-toolbar").evaluate((toolbar) =>
-      toolbar.closest(".cc-panel").querySelector(".cc-scroll").getBoundingClientRect().top
-        - toolbar.getBoundingClientRect().bottom);
-    expect(gap).toBeGreaterThanOrEqual(12);
   });
 }
+
+test.describe("manual week-start override", () => {
+  test.use({ locale: "en-US" });
+  test("updates visible and fetched weeks and persists across reloads, navigation, tabs, and remounts", async ({ page, context }) => {
+    let listing = results(card(1, "Boundary ride", "2026-11-01"));
+    const requests = await setup(page, () => ({ body: listing }));
+    await page.goto(`${origin}${route}?date_from=10%2F01%2F2026&date_to=10%2F31%2F2026`);
+    await page.getByRole("switch", { name: "Calendar view", exact: true }).click();
+    await expect(page.locator("#cc-calendar-panel")).toHaveAttribute("aria-busy", "false");
+    const select = page.getByLabel("Week starts on", { exact: true });
+    await expect(select).toHaveValue("auto");
+    await expect(page.locator(".cc-ride")).toHaveCount(0);
+    expect(await page.evaluate(() => localStorage.getItem("cascade-calendar-week-start"))).toBeNull();
+    await expect(select).toHaveCSS("height", "36px");
+    await expect(page.locator(".cc-settings")).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+    const scroll = await page.locator(".cc-scroll").boundingBox();
+    const settings = await page.locator(".cc-settings").boundingBox();
+    expect(settings.y).toBeGreaterThanOrEqual(scroll.y + scroll.height + 12);
+    await page.setViewportSize({ width: 320, height: 844 });
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    const control = await select.boundingBox();
+    expect(control.x + control.width).toBeLessThanOrEqual(320);
+    await select.focus();
+    await select.selectOption("5");
+    await expect(select).toBeFocused();
+    await expect(page.locator(".cc-day").first()).toHaveAttribute("data-date", "2026-09-25");
+    await expect(page.locator(".cc-day").last()).toHaveAttribute("data-date", "2026-11-05");
+    await select.selectOption("1");
+    await expect(page.locator("#cc-calendar-panel")).toHaveAttribute("aria-busy", "false");
+    await expect(page.locator(".cc-day").first()).toHaveAttribute("data-date", "2026-09-28");
+    await expect(page.locator(".cc-day").last()).toHaveAttribute("data-date", "2026-11-01");
+    await expect(page.locator(".cc-ride-title")).toHaveText("Boundary ride");
+    expect(await page.evaluate(() => localStorage.getItem("cascade-calendar-week-start"))).toBe("1");
+    const fetched = requests.filter((entry) => !entry.navigation).at(-1).url;
+    expect(fetched.searchParams.get("date_from")).toBe("09/28/2026");
+    expect(fetched.searchParams.get("date_to")).toBe("11/01/2026");
+    expect(new URL(page.url()).searchParams.get("date_from")).toBe("10/01/2026");
+    await page.reload();
+    await expect(select).toHaveValue("1");
+    await page.getByRole("button", { name: "Next month", exact: true }).click();
+    await expect(page.locator(".cc-heading")).toHaveText("November 2026");
+    await expect(select).toHaveValue("1");
+    await expect(page.locator(".cc-day").first()).toHaveAttribute("data-date", "2026-10-26");
+    await expect(page.locator(".cc-day").last()).toHaveAttribute("data-date", "2026-12-06");
+    listing = results(card(2, "Replacement ride", "2026-11-02"));
+    await page.evaluate((html) => {
+      document.querySelector("#block-views-block-rides-events-search-mainblock").outerHTML = html;
+    }, listing);
+    await expect(page.locator(".cc-ride-title")).toHaveText("Replacement ride");
+    await expect(select).toHaveValue("1");
+    await page.getByRole("switch", { name: "Calendar view", exact: true }).click();
+    await expect(select).toBeHidden();
+    await page.getByRole("switch", { name: "Calendar view", exact: true }).click();
+    await expect(select).toHaveValue("1");
+    const other = await context.newPage();
+    try {
+      await setup(other, () => ({ body: listing }));
+      await other.goto(`${origin}${route}`);
+      const otherSelect = other.getByLabel("Week starts on", { exact: true });
+      await expect(otherSelect).toHaveValue("1");
+      await otherSelect.selectOption("auto");
+      await expect(other.locator(".cc-weekday")).toHaveText(["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]);
+      expect(await other.evaluate(() => localStorage.getItem("cascade-calendar-week-start"))).toBe("auto");
+      listing = results(card(3, "Another replacement", "2026-11-03"));
+      await page.evaluate((html) => {
+        document.querySelector("#block-views-block-rides-events-search-mainblock").outerHTML = html;
+      }, listing);
+      await expect(page.locator(".cc-ride-title")).toHaveText("Another replacement");
+      await expect(select).toHaveValue("1");
+      expect(await page.evaluate(() => localStorage.getItem("cascade-calendar-week-start"))).toBe("auto");
+      await page.reload();
+      await expect(select).toHaveValue("auto");
+      await expect(page.locator(".cc-weekday")).toHaveText(["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]);
+    } finally {
+      await other.close();
+    }
+  });
+});
 
 test("keeps narrower sidebar date filters when displaying complete weeks", async ({ page }) => {
   const requests = await setup(page, () => ({
@@ -240,6 +340,12 @@ test("keeps narrower sidebar date filters when displaying complete weeks", async
   const fetched = requests.find((entry) => !entry.navigation).url;
   expect(fetched.searchParams.get("date_from")).toBe("10/15/2026");
   expect(fetched.searchParams.get("date_to")).toBe("10/20/2026");
+  const before = requests.length;
+  await page.getByLabel("Week starts on", { exact: true }).selectOption("5");
+  await expect(page.locator(".cc-day").first()).toHaveAttribute("data-date", "2026-09-25");
+  await expect(page.locator(".cc-day").last()).toHaveAttribute("data-date", "2026-11-05");
+  await expect(page.locator(".cc-ride-title")).toHaveText(["Filter start", "Filter end"]);
+  expect(requests.length).toBe(before);
 });
 
 test("navigates months and dates, preserving facets and applying sidebar bounds", async ({ page }) => {
@@ -384,7 +490,7 @@ test("saves calendar expansion in local storage across reloads, navigation, tabs
   await other.close();
 });
 
-test("keeps both view and expansion usable when local storage is unavailable", async ({ page }) => {
+test("keeps calendar controls usable when local storage is unavailable", async ({ page }) => {
   await setup(page);
   await page.addInitScript(() => {
     Object.defineProperty(window, "localStorage", {
@@ -397,6 +503,8 @@ test("keeps both view and expansion usable when local storage is unavailable", a
   await expect(page.locator(".cc-day").first()).toHaveCSS("height", "220px");
   await page.getByRole("button", { name: "Expand calendar", exact: true }).click();
   await expect(page.locator(".cc-root")).not.toHaveClass(/cc-collapsed/);
+  await page.getByLabel("Week starts on", { exact: true }).selectOption("0");
+  await expect(page.locator(".cc-weekday")).toHaveText(["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]);
   await page.getByRole("switch", { name: "Calendar view", exact: true }).click();
   await expect(page.locator("#cc-calendar-panel")).toBeHidden();
   await page.getByRole("switch", { name: "Calendar view", exact: true }).click();
@@ -481,7 +589,7 @@ test("reuses the loaded first page and requests known remaining pages concurrent
   await expect(page.locator(".cc-ride")).toHaveCount(3);
 });
 
-async function expectReadableCalendar(page, selectors = [".cc-day:not(.cc-outside)", ".cc-outside", ".cc-weekday", ".cc-ride", ".cc-ride-meta", ".cc-button", ".cc-root input", ".cc-today .cc-day-number", ".cc-view-list", ".cc-view-calendar"]) {
+async function expectReadableCalendar(page, selectors = [".cc-day:not(.cc-outside)", ".cc-outside", ".cc-weekday", ".cc-ride", ".cc-ride-meta", ".cc-button", ".cc-root input", ".cc-today .cc-day-number", ".cc-view-list", ".cc-view-calendar", ".cc-week-start", ".cc-settings label"]) {
   await page.locator(".cc-view-highlight").evaluate(async (node) => {
     await Promise.all(node.getAnimations().map((animation) => animation.finished.catch(() => {})));
   });
@@ -516,7 +624,7 @@ async function expectReadableCalendar(page, selectors = [".cc-day:not(.cc-outsid
   }
 }
 
-test("fades rides after their start time and updates visible and cached calendars", async ({ page }) => {
+test("fades past rides only when rendering, including cached results", async ({ page }) => {
   await page.clock.install({ time: new Date("2026-10-31T14:00:00Z") });
   const requests = await setup(page, () => ({
     body: results(
@@ -555,6 +663,10 @@ test("fades rides after their start time and updates visible and cached calendar
   await expect(page.locator('.cc-ride[href$="/3"]')).toHaveCSS("opacity", "0.6");
   await expect(page.locator('.cc-ride[href$="/4"]')).toHaveCSS("opacity", "1");
   await page.clock.runFor(60000);
+  await expect(page.locator('.cc-ride[href$="/4"]')).toHaveCSS("opacity", "1");
+  await page.getByRole("switch", { name: "Calendar view", exact: true }).click();
+  await page.getByRole("switch", { name: "Calendar view", exact: true }).click();
+  await expect(page.locator("#cc-calendar-panel")).toHaveAttribute("aria-busy", "false");
   await expect(page.locator('.cc-ride[href$="/4"]')).toHaveCSS("opacity", "0.6");
 });
 
@@ -584,13 +696,19 @@ test("responds to Dark Reader's scheme attribute without changing light mode", a
   await expect(page.locator("#cc-calendar-panel")).toHaveAttribute("aria-busy", "false");
   const day = page.locator(".cc-day:not(.cc-outside)").first();
   await expect(day).toHaveCSS("background-color", "rgb(255, 255, 255)");
-  await page.evaluate(() => document.documentElement.dataset.darkreaderScheme = "dark");
+  await page.evaluate(() => {
+    document.documentElement.dataset.darkreaderScheme = "dark";
+    document.body.style.backgroundColor = "#1c2723";
+  });
   await expect(page.locator(".cc-root")).toHaveCSS("color-scheme", "dark");
   await expect(day).toHaveCSS("background-color", "rgb(28, 39, 35)");
   await expectReadableCalendar(page);
   await page.locator(".cc-ride").first().hover();
   await expectReadableCalendar(page);
-  await page.evaluate(() => document.documentElement.dataset.darkreaderScheme = "light");
+  await page.evaluate(() => {
+    document.documentElement.dataset.darkreaderScheme = "light";
+    document.body.style.removeProperty("background-color");
+  });
   await expect(day).toHaveCSS("background-color", "rgb(255, 255, 255)");
   await page.evaluate(() => delete document.documentElement.dataset.darkreaderScheme);
   await expect(page.locator(".cc-root")).toHaveCSS("color-scheme", "light");
@@ -608,6 +726,7 @@ test("stays readable with Dark Reader's dynamic rendering engine enabled", async
   await page.getByRole("switch", { name: "Calendar view", exact: true }).click();
   await expect(page.locator("#cc-calendar-panel")).toHaveAttribute("aria-busy", "false");
   await expect(page.locator(".cc-root")).toHaveCSS("color-scheme", "dark");
+  await expect(page.locator(".cc-settings")).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
   await expectReadableCalendar(page);
   await page.locator(".cc-ride").first().hover();
   await expectReadableCalendar(page);

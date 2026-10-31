@@ -8,7 +8,7 @@ Cascade Ride Calendar is an unofficial Chrome extension that adds a calendar to 
 
 The extension handles the current Cascade ride-search URL, search/filter selections such as dates and pace, and public listing content such as ride titles, times, locations, pace, cancellation status, and links. It uses this information to find matching rides and display the calendar.
 
-It also saves your List / Calendar and expanded / compact preferences. It does not access other websites or the browser's browsing-history database, or maintain a browsing-history log.
+Your browser's locale is used to choose the calendar's default week start. The extension also saves your List / Calendar, expanded / compact, and week-start preferences. It does not access other websites or the browser's browsing-history database, or maintain a browsing-history log.
 
 ## Requests and sharing
 
@@ -20,7 +20,7 @@ The extension has no developer backend, analytics, advertising, or tracking. It 
 
 Ride results and request caches stay in memory for the open page and are not saved as a persistent ride or search history. Closing or reloading the page discards this in-memory calendar state.
 
-View and layout preferences remain in your browser's local storage for `cascade.org` until changed or removed. This is Cascade site storage, not private extension storage; scripts running on that site can access it.
+View, layout, and week-start preferences remain in your browser's local storage for `cascade.org` until changed or removed. This is Cascade site storage, not private extension storage; scripts running on that site can access it.
 
 Uninstalling stops the extension but may leave these site preferences behind. To remove them, clear site data for `cascade.org` using your browser's settings. This may also remove Cascade sign-in state and other site settings.
 

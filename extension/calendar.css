@@ -101,14 +101,19 @@ html[data-darkreader-scheme="dark"] .cc-root {
 .cc-root .cc-jump input[type="date"] { box-sizing: border-box; font: inherit; line-height: normal; color: var(--cc-ink); height: 36px; min-height: 0; padding: 4px 6px; width: auto; }
 .cc-root .cc-toolbar .cc-button,
 .cc-root .cc-toolbar input[type="date"],
+.cc-root .cc-week-start,
 .cc-root .cc-view-toggle { background: var(--cc-header); border: 2px solid var(--cc-control-border); border-radius: 8px; }
 .cc-root .cc-toolbar .cc-button:hover,
 .cc-root .cc-toolbar input[type="date"]:hover,
+.cc-root .cc-week-start:hover,
 .cc-root .cc-view-toggle:hover { background: var(--cc-ride-hover); }
 .cc-root .cc-status { margin: 12px 0; font: inherit; }
 .cc-panel[aria-busy="true"] .cc-status { position: absolute; width: 1px; height: 1px; padding: 0; margin: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .cc-retry { margin-bottom: 12px; }
 .cc-scroll { overflow-x: auto; border: 1px solid var(--cc-border); border-radius: 8px; }
+.cc-settings { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+.cc-root .cc-settings label { margin: 0; font: inherit; }
+.cc-root .cc-week-start { font: inherit; line-height: normal; color: var(--cc-ink); height: 36px; min-height: 0; width: auto; max-width: 100%; padding: 4px 8px; cursor: pointer; }
 .cc-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); min-width: 770px; background: var(--cc-border); gap: 1px; }
 .cc-weekday { background: var(--cc-header); text-align: center; font-weight: 700; padding: 10px; }
 .cc-day { background: var(--cc-surface); min-height: 220px; padding: 7px; }
