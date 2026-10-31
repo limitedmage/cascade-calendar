@@ -73,8 +73,9 @@ Cancellation markers and multi-pace groups depend on currently published rides. 
 - Screenshots: the five PNG files in this folder, each 1280 x 800 pixels.
 - The source calendar-and-bike artwork is `assets\icon.svg`.
 - The high-resolution cancellation capture is `assets\cancelled-ride.png`; other screenshot sources are in `docs`.
+- Close-up ride-name and time captures are `assets\store-pace-colors.png` and `assets\store-pace-order.png`.
 
-Screenshots use actual calendar captures presented in store-sized layouts. No fabricated ride data is used.
+Screenshots use focused crops of actual calendar captures, designed to remain readable when the store displays them at 640 x 400. Upload the 1280 x 800 originals for sharpness. No fabricated ride data is used.
 
 ## Final submission checklist
 
