@@ -99,4 +99,4 @@ The project's original code and artwork are licensed under [GNU GPLv3-only](http
 
 Third-party names, logos, and Cascade ride content are not relicensed by this project.
 
-The expand/collapse icons use Google's [Material Symbols](https://github.com/google/material-design-icons), under [Apache-2.0](extension/icons/material-symbols-LICENSE.txt).
+The expand/collapse icons use [Framework7 Icons](https://github.com/framework7io/framework7-icons), under [MIT](extension/icons/framework7-LICENSE.txt).
