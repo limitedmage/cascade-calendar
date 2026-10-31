@@ -311,3 +311,48 @@ test("colors rides by their final pace label and keeps every pace readable in Da
   await expectReadableCalendar(page, selectors);
   await page.screenshot({ path: test.info().outputPath("pace-colors-dark-reader.png"), fullPage: true });
 });
+
+test("widens only the calendar layout, retains sidebar width, and restores the list layout", async ({ page }) => {
+  await setup(page);
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  await page.goto(`${origin}${route}?f%5B0%5D=event_type%3A21`);
+  await page.addStyleTag({ content: `
+    body { margin: 0; }
+    .layout--sidebar-search { max-width: 1280px; margin: auto; padding: 0 32px; box-sizing: border-box; }
+    @media (min-width: 768px) {
+      .ts-grid-3-9 { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 32px; }
+      .ts-grid-3-9 > :first-child { grid-column: span 3; }
+      .layout__region--main { grid-column: 4 / span 9; }
+    }
+  ` });
+  await page.evaluate(() => {
+    const main = document.querySelector("main");
+    const layout = document.createElement("div");
+    layout.className = "layout--sidebar-search";
+    const grid = document.createElement("div");
+    grid.className = "ts-grid-3-9";
+    const content = document.createElement("div");
+    content.className = "layout__region--main";
+    content.append(...main.childNodes);
+    grid.append(document.querySelector("aside"), content);
+    layout.append(grid);
+    main.append(layout);
+  });
+  const layout = page.locator(".layout--sidebar-search");
+  const content = page.locator(".layout__region--main");
+  const width = (node) => node.evaluate((element) => element.getBoundingClientRect().width);
+  const original = await width(content);
+  await expect(layout).toHaveCSS("width", "1280px");
+  await page.getByRole("button", { name: "Show calendar", exact: true }).click();
+  await expect(layout).toHaveCSS("width", "1920px");
+  expect(await width(content)).toBeGreaterThan(original + 500);
+  await expect(page.locator("aside")).toHaveCSS("width", "280px");
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.getByRole("button", { name: "Show default list" }).click();
+  await expect(layout).toHaveCSS("width", "1280px");
+  expect(await width(content)).toBe(original);
+  await page.getByRole("button", { name: "Show calendar", exact: true }).click();
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  expect(await page.locator(".cc-scroll").evaluate((node) => node.scrollWidth > node.clientWidth)).toBe(true);
+});

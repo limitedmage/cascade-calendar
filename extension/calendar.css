@@ -3,6 +3,25 @@
   display: none !important;
 }
 
+.layout--sidebar-search:has(.cc-panel:not([hidden])) {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: none;
+}
+
+@media (min-width: 1024px) {
+  .layout--sidebar-search:has(.cc-panel:not([hidden])) > .ts-grid-3-9 {
+    grid-template-columns: minmax(220px, 280px) minmax(0, 1fr);
+  }
+  .layout--sidebar-search:has(.cc-panel:not([hidden])) > .ts-grid-3-9 > :first-child {
+    grid-column: 1;
+  }
+  .layout--sidebar-search:has(.cc-panel:not([hidden])) > .ts-grid-3-9 > .layout__region--main {
+    grid-column: 2;
+    min-width: 0;
+  }
+}
+
 .cc-root {
   --cc-ink: #00495e;
   --cc-border: #cbd9d6;
