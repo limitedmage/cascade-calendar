@@ -481,3 +481,22 @@ test("keeps the date input compact despite Cascade's form-control styles", async
   await date.fill("2026-11-15");
   await expect(page.locator(".cc-heading")).toHaveText("November 2026");
 });
+
+test("aligns the date label with the month despite Cascade's label margins", async ({ page }) => {
+  await setup(page);
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.goto(`${origin}${route}?f%5B0%5D=event_type%3A21`);
+  await page.addStyleTag({ content: `label { margin-bottom: 8px; font: 500 16px/1.4 sans-serif; }` });
+  await page.getByRole("button", { name: "Show calendar", exact: true }).click();
+  const offset = await page.locator(".cc-toolbar").evaluate((toolbar) => {
+    const textCenter = (node) => {
+      const range = document.createRange();
+      range.selectNodeContents(node.firstChild);
+      const bounds = range.getBoundingClientRect();
+      return bounds.y + bounds.height / 2;
+    };
+    return Math.abs(textCenter(toolbar.querySelector(".cc-heading")) - textCenter(toolbar.querySelector(".cc-jump")));
+  });
+  expect(offset).toBeLessThan(2);
+  await expect(page.locator(".cc-jump")).toHaveCSS("margin-bottom", "0px");
+});
