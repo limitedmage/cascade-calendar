@@ -329,7 +329,7 @@
     scroll.tabIndex = 0;
     scroll.setAttribute("aria-label", "Monthly calendar; scroll horizontally on small screens");
     scroll.append(element("div", "cc-grid"));
-    panel.append(toolbar, element("p", "cc-help", "Use the sidebar filters to narrow rides. Scroll within busy days to see every ride. Month navigation updates From and To; other filters are kept."), status, retry, scroll);
+    panel.append(toolbar, element("p", "cc-help", "Use the sidebar filters to narrow rides. Month navigation updates From and To; other filters are kept."), status, retry, scroll);
     host.append(viewBar, panel);
     block.before(host);
     setMode(calendarMode);

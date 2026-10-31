@@ -133,7 +133,7 @@ test("remounts after Drupal replaces results and remains usable on mobile", asyn
   await expect(page.locator(`#${resultsId}`)).toContainText("Updated Drupal listing");
 });
 
-test("busy days keep the month compact while every ride stays accessible", async ({ page }) => {
+test("busy days expand to show every ride without internal scrolling", async ({ page }) => {
   await setup(page, () => ({
     body: results(Array.from({ length: 15 }, (_, index) => card(index, `Ride ${index}`, "2026-10-31")).join("")),
   }));
@@ -142,9 +142,14 @@ test("busy days keep the month compact while every ride stays accessible", async
   await expect(page.getByRole("status")).toContainText("15 free group rides");
   const day = page.locator('.cc-day[data-date="2026-10-31"]');
   await expect(day.locator(".cc-ride")).toHaveCount(15);
-  await expect.poll(() => day.evaluate((node) => node.scrollHeight > node.clientHeight)).toBe(true);
-  await day.locator(".cc-ride").last().focus();
-  expect(await day.evaluate((node) => node.scrollTop)).toBeGreaterThan(0);
+  const layout = await day.evaluate((node) => {
+    const last = node.querySelector(".cc-ride:last-child").getBoundingClientRect();
+    const bounds = node.getBoundingClientRect();
+    return { fits: last.bottom <= bounds.bottom, scrolls: node.scrollHeight > node.clientHeight, height: bounds.height };
+  });
+  expect(layout.fits).toBe(true);
+  expect(layout.scrolls).toBe(false);
+  expect(layout.height).toBeGreaterThan(220);
 });
 
 test("shows existing rides immediately, renders pages progressively, and caches completed results", async ({ page }) => {
