@@ -7,7 +7,7 @@ Bug reports, fixes, documentation, and accessibility improvements are welcome. T
 Search [existing issues](https://github.com/limitedmage/cascade-calendar/issues) first. For a bug, include:
 
 - Steps to reproduce, expected behavior, and what happened instead.
-- Chrome and extension versions.
+- Chrome/Edge and extension versions.
 - The relevant public Cascade search or ride URL.
 - A screenshot when useful, and whether Dark Reader is enabled.
 
