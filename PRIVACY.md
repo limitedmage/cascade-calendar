@@ -1,8 +1,8 @@
 # Cascade Ride Calendar Privacy Policy
 
-Last updated: October 31, 2026
+Last updated: November 3, 2026
 
-Cascade Ride Calendar is an unofficial Chrome extension that adds a calendar to Cascade Bicycle Club's ride search. This policy covers the extension, not Cascade's website or other extensions.
+Cascade Ride Calendar is an unofficial Chrome/Firefox extension and Safari-compatible userscript that add a calendar to Cascade Bicycle Club's ride search. This policy covers both formats, not Cascade's website, userscript managers, or other extensions. References to "the extension" below also apply to the userscript.
 
 ## Information used
 
@@ -22,7 +22,7 @@ Ride results and request caches stay in memory for the open page and are not sav
 
 View, layout, and week-start preferences remain in your browser's local storage for `cascade.org` until changed or removed. This is Cascade site storage, not private extension storage; scripts running on that site can access it.
 
-Uninstalling stops the extension but may leave these site preferences behind. To remove them, clear site data for `cascade.org` using your browser's settings. This may also remove Cascade sign-in state and other site settings.
+Uninstalling the extension, or disabling/removing the userscript in its manager, stops the calendar but may leave these site preferences behind. To remove them, clear site data for `cascade.org` using your browser's settings. This may also remove Cascade sign-in state and other site settings.
 
 ## Limited use
 

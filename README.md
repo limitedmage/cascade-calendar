@@ -1,6 +1,6 @@
 # Cascade Ride Calendar
 
-A Chrome extension that adds a month calendar to [Cascade's ride search](https://cascade.org/rides-events/ride-event-search?f%5B0%5D=event_type%3A21).
+A Chrome/Firefox extension and Safari-compatible userscript that add a month calendar to [Cascade's ride search](https://cascade.org/rides-events/ride-event-search?f%5B0%5D=event_type%3A21).
 
 ## DISCLAIMER
 
@@ -73,9 +73,36 @@ The calendar adapts automatically to Dark Reader, keeping pace colors, controls,
 
 ## Install
 
+### Chrome / Edge
+
 1. Open `chrome://extensions` and enable **Developer mode**.
 2. Click **Load unpacked** and select this repository's `extension` folder.
 3. Open Cascade's ride search; the calendar appears by default.
+
+### Firefox
+
+Build the Firefox package from this repository:
+
+```sh
+npm ci
+npm run build
+```
+
+For local testing, open `about:debugging#/runtime/this-firefox`, select **Load Temporary Add-on**, and choose `dist/firefox/manifest.json`. Temporary installations last until Firefox restarts. Firefox 142 or later is required.
+
+For permanent installation in standard Firefox, the maintainer must submit `dist/cascade-calendar-firefox-1.0.0.zip` to Mozilla for **self-distribution (unlisted)** signing. Distribute the resulting signed `.xpi` through GitHub Releases or another download host; a public Mozilla Add-ons listing is not required. The ZIP itself is unsigned and is not a permanent-install download. Subsequent builds use the version in `extension/manifest.json`; keep the generated Firefox ID unchanged.
+
+See [Mozilla's signing and distribution guide](https://extensionworkshop.com/documentation/publish/signing-and-distribution-overview/). Self-hosted automatic updates require a separate update manifest; none is configured here.
+
+The Firefox manifest declares required search-term transmission because calendar requests send the current search/filter selections to Cascade. This does not add analytics or send data to the developer; see [Privacy](PRIVACY.md).
+
+### Safari userscript (Mac, iPhone, and iPad)
+
+Install a compatible userscript manager, such as the free, open-source [Userscripts for Safari](https://github.com/quoid/userscripts#installation), and enable it in Safari's extension settings. Userscripts itself requires an App Store installation, but this project's script does not require an App Store submission.
+
+Import the committed `dist/cascade-calendar.user.js` into the manager, or regenerate it with `npm ci` and `npm run build`. With Userscripts, copy the file into its configured scripts directory, or install it from a hosted URL ending in `.user.js`. Grant the manager access to `cascade.org`, enable the script, and open Cascade's ride search.
+
+The generated script bundles the same JavaScript and CSS as the extension, runs only on the ride-search URL, and needs no privileged userscript APIs or external libraries. Rebuild and replace the script to update it; automatic script updates are not configured. Use only one installation format per browser to avoid duplicate calendars.
 
 Use **Previous**, **Next**, **Today**, or **Go to date** to navigate. Navigation reloads the page with the sidebar's From/To filters set to the selected month, retaining search, pace, terrain, and other filters. The **List / Calendar** toggle at the top right highlights the selected view and switches between the calendar and Cascade's original list. The choice is saved in Cascade's local storage across reloads and tabs; calendar is the default until you choose otherwise.
 
@@ -87,7 +114,7 @@ Matching rides already on the page appear immediately. Additional results render
 
 No background service, external libraries, analytics, or extra extension permissions. Requests go only to Cascade; the original list remains accessible.
 
-Dark Reader is supported: when it sets `data-darkreader-scheme="dark"` on the page, the calendar uses a dark palette and dark native date controls. Turning Dark Reader off restores the light palette. Dark Reader is a development-only dependency used to test compatibility; it is not bundled in the extension.
+Dark Reader is supported: when it sets `data-darkreader-scheme="dark"` on the page, the calendar uses a dark palette and dark native date controls. Turning Dark Reader off restores the light palette. The userscript marks its stylesheet as a user style so Dark Reader does not recolor the calendar's existing dark palette a second time; the rest of Cascade remains themed by Dark Reader. Dark Reader is a development-only dependency used to test compatibility; it is not bundled in the extension.
 
 Ride cards use softly tinted backgrounds and strong left borders based on the final pace label in their title: Easy is pink, Leisurely red, Steady yellow, Moderate green, Brisk blue, Vigorous blue-leaning purple, Strenuous/Super Strenuous purple, and Self Paced gray. Dark Reader uses darker tints with the same pace hues. Unrecognized paces keep the default styling. Pace names remain in the title so colors are not the only cue.
 
@@ -99,12 +126,19 @@ Rides are checked for past start times only when rendered, using Cascade's times
 
 ## Development
 
+Use Node.js 22 or later for Mozilla's `web-ext` build and lint tooling.
+
 ```powershell
 npm ci
-npx playwright install chromium
+npx playwright install chromium firefox webkit
+npm run build
 npm run check
 npm test
 ```
+
+`npm run build` produces an unsigned Firefox ZIP, its unpacked files in `dist/firefox`, and a self-contained `dist/cascade-calendar.user.js`. Commit the regenerated userscript with source changes; other build outputs are ignored by Git. Chrome continues to use the unchanged `extension` folder. Both `npm run check` and `npm test` rebuild these artifacts first; the check also validates JavaScript syntax and runs Mozilla's extension linter.
+
+Playwright runs the existing calendar tests in Chromium and Firefox with simulated content-script injection, and in WebKit with the generated userscript. This checks browser-engine compatibility, not Mozilla signing or the actual Safari userscript manager; check installation manually before publishing.
 
 Playwright's browser timezone is `America/Los_Angeles` (PST/PDT). Tests use local responses modeled on the live site's Drupal markup. The live page was explored with Playwright to verify card selectors, ISO timestamps, date-filter format, and pagination. A future Cascade redesign may require updating these selectors.
 

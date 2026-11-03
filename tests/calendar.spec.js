@@ -47,13 +47,37 @@ async function setup(page, respond, initialView = "list") {
       } catch {}
     }, initialView);
   }
-  // Simulate Chrome's content-script injection on each full-page navigation.
-  await page.addInitScript({ path: path.resolve("extension\\content.js") });
-  page.on("domcontentloaded", async () => {
-    await page.addStyleTag({ path: path.resolve("extension\\calendar.css") }).catch(() => {});
-  });
+  if (test.info().project.metadata.userscript) {
+    await page.addInitScript({ path: path.resolve("dist", "cascade-calendar.user.js") });
+  } else {
+    // Simulate extension injection on each full-page navigation.
+    const extension = test.info().project.name === "firefox" ? path.join("dist", "firefox") : "extension";
+    await page.addInitScript({ path: path.resolve(extension, "content.js") });
+    page.on("domcontentloaded", async () => {
+      await page.addStyleTag({ path: path.resolve(extension, "calendar.css") }).catch(() => {});
+    });
+  }
   return requests;
 }
+
+test("userscript installs its styles and calendar when injected after page load", async ({ page }) => {
+  test.skip(!test.info().project.metadata.userscript, "Userscript distribution only");
+  await page.clock.setFixedTime(new Date("2026-10-31T14:00:00Z"));
+  await page.route(`${origin}${route}**`, (request) => request.fulfill({
+    contentType: "text/html",
+    body: pageHtml(new URL(request.request().url()), results(card(1, "Morning ride", "2026-10-31"))),
+  }));
+  await page.goto(`${origin}${route}`);
+  await page.addScriptTag({ path: path.resolve("dist", "cascade-calendar.user.js") });
+  await expect(page.locator("#cascade-calendar-style")).toHaveCount(1);
+  await expect(page.locator("#cc-calendar-panel")).toBeVisible();
+  await expect(page.locator(`#${resultsId}`)).toBeHidden();
+  await expect(page.locator(".cc-grid")).toHaveCSS("display", "grid");
+  await expect(page.locator('.cc-day[data-date="2026-10-31"] .cc-ride')).toHaveText(/Morning ride/);
+  await page.getByRole("switch", { name: "Calendar view", exact: true }).click();
+  await expect(page.locator(`#${resultsId}`)).toBeVisible();
+  await expect(page.locator("#cc-calendar-panel")).toBeHidden();
+});
 
 test("defaults to calendar and saves the selected view in local storage across reloads and tabs", async ({ page, context }) => {
   await setup(page, undefined, null);
@@ -65,7 +89,7 @@ test("defaults to calendar and saves the selected view in local storage across r
   const highlight = page.locator(".cc-view-highlight");
   await expect(highlight).not.toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
   const selectedColor = await highlight.evaluate((node) => getComputedStyle(node).backgroundColor);
-  expect((await highlight.boundingBox()).x).toBeCloseTo((await page.locator(".cc-view-calendar").boundingBox()).x, 1);
+  expect(Math.abs((await highlight.boundingBox()).x - (await page.locator(".cc-view-calendar").boundingBox()).x)).toBeLessThan(1);
   await page.getByRole("switch", { name: "Calendar view", exact: true }).click();
   expect(await page.evaluate(() => localStorage.getItem("cascade-calendar-view"))).toBe("list");
   expect(await page.evaluate(() => sessionStorage.getItem("cascade-calendar-view"))).toBeNull();
@@ -73,7 +97,7 @@ test("defaults to calendar and saves the selected view in local storage across r
   await expect(page.locator(`#${resultsId}`)).toBeVisible();
   await expect(page.getByRole("switch", { name: "Calendar view", exact: true })).toHaveAttribute("aria-checked", "false");
   await expect(highlight).toHaveCSS("background-color", selectedColor);
-  expect((await highlight.boundingBox()).x).toBeCloseTo((await page.locator(".cc-view-list").boundingBox()).x, 1);
+  expect(Math.abs((await highlight.boundingBox()).x - (await page.locator(".cc-view-list").boundingBox()).x)).toBeLessThan(1);
   expect(await page.getByRole("switch").evaluate((node) =>
     Math.abs(node.getBoundingClientRect().right - (node.closest(".cc-toolbar") || node.closest(".cc-root")).getBoundingClientRect().right))).toBeLessThan(1);
   const other = await context.newPage();
@@ -111,7 +135,7 @@ test("slides the view highlight in both directions and reverses without jumping"
     });
     expect(positions.middle).toBeGreaterThan(positions.list);
     expect(positions.middle).toBeLessThan(positions.calendar);
-    expect(positions.end).toBeCloseTo(enabled ? positions.calendar : positions.list, 1);
+    expect(Math.abs(positions.end - (enabled ? positions.calendar : positions.list))).toBeLessThan(1);
     await expect(toggle).toHaveAttribute("aria-checked", String(enabled));
   }
   const reversal = await toggle.evaluate((node) => {
@@ -144,8 +168,8 @@ test("switches views without animation when reduced motion is requested", async 
   for (const enabled of [false, true]) {
     await toggle.click();
     expect(await highlight.evaluate((node) => node.getAnimations().length)).toBe(0);
-    expect((await highlight.boundingBox()).x).toBeCloseTo(
-      (await page.locator(enabled ? ".cc-view-calendar" : ".cc-view-list").boundingBox()).x, 1);
+    expect(Math.abs((await highlight.boundingBox()).x -
+      (await page.locator(enabled ? ".cc-view-calendar" : ".cc-view-list").boundingBox()).x)).toBeLessThan(1);
     await expect(toggle).toHaveAttribute("aria-checked", String(enabled));
   }
 });
@@ -176,7 +200,7 @@ test("toggles original list and loads every page with safe links and Pacific dat
   await expect(day.locator("img")).toHaveCount(0);
   await expect(day.locator(".cc-ride").first()).toHaveAttribute("href", `${origin}/rides-events/1`);
   await expect(day.locator("time")).toHaveAttribute("aria-current", "date");
-  await page.getByRole("switch", { name: "Calendar view", exact: true }).click();
+  await page.getByRole("switch", { name: "Calendar view", exact: true }).press("Enter");
   await expect(page.locator(`#${resultsId}`)).toBeVisible();
   await expect(page.locator("#cc-calendar-panel")).toBeHidden();
   await expect(page.getByRole("switch", { name: "Calendar view", exact: true })).toBeVisible();
@@ -734,6 +758,48 @@ test("stays readable with Dark Reader's dynamic rendering engine enabled", async
   await page.evaluate(() => DarkReader.disable());
   await expect(page.locator(".cc-day:not(.cc-outside)").first()).toHaveCSS("background-color", "rgb(255, 255, 255)");
 });
+
+for (const darkReaderFirst of [false, true]) {
+  test(`userscript keeps its native palette with Dark Reader enabled ${darkReaderFirst ? "before" : "after"} injection`, async ({ page }) => {
+    test.skip(!test.info().project.metadata.userscript, "Userscript distribution only");
+    await page.clock.setFixedTime(new Date("2026-10-31T14:00:00Z"));
+    await page.route(`${origin}${route}**`, (request) => request.fulfill({
+      contentType: "text/html",
+      body: pageHtml(new URL(request.request().url()), results(
+        card(1, "Morning ride (Moderate)", "2026-10-31")
+        + card(2, "Morning ride (Steady)", "2026-10-31"),
+      )),
+    }));
+    await page.goto(`${origin}${route}`);
+    await page.addStyleTag({ content: "body { background: #fff; color: #222; }" });
+    await page.addScriptTag({ path: require.resolve("darkreader") });
+    const enableDarkReader = () => page.evaluate(() => {
+      DarkReader.setFetchMethod(window.fetch);
+      DarkReader.enable({ brightness: 100, contrast: 100, sepia: 0 });
+    });
+    if (darkReaderFirst) await enableDarkReader();
+    await page.addScriptTag({ path: path.resolve("dist", "cascade-calendar.user.js") });
+    if (!darkReaderFirst) await enableDarkReader();
+    await expect(page.locator("#cc-calendar-panel")).toHaveAttribute("aria-busy", "false");
+    const day = page.locator(".cc-day:not(.cc-outside)").first();
+    const moderate = page.locator('.cc-ride[data-pace="moderate"]');
+    const steady = page.locator('.cc-ride[data-pace="steady"]');
+    for (let cycle = 0; cycle < 2; cycle++) {
+      await expect(page.locator("html")).toHaveAttribute("data-darkreader-scheme", "dark");
+      await expect(page.locator("body")).not.toHaveCSS("background-color", "rgb(255, 255, 255)");
+      await expect(day).toHaveCSS("background-color", "rgb(28, 39, 35)");
+      await expect(moderate).toHaveCSS("background-color", "rgb(35, 53, 42)");
+      await expect(moderate).toHaveCSS("border-left-color", "rgb(140, 205, 167)");
+      await expect(steady).toHaveCSS("background-color", "rgb(53, 49, 31)");
+      await expect(steady).toHaveCSS("border-left-color", "rgb(245, 207, 63)");
+      await expectReadableCalendar(page);
+      await page.evaluate(() => DarkReader.disable());
+      await expect(day).toHaveCSS("background-color", "rgb(255, 255, 255)");
+      await expect(moderate).toHaveCSS("background-color", "rgb(231, 243, 233)");
+      if (cycle === 0) await enableDarkReader();
+    }
+  });
+}
 
 test("colors rides by their final pace label and keeps upcoming rides readable in Dark Reader", async ({ page }) => {
   const paces = [

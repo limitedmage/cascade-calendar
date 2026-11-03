@@ -7,7 +7,7 @@ Bug reports, fixes, documentation, and accessibility improvements are welcome. T
 Search [existing issues](https://github.com/limitedmage/cascade-calendar/issues) first. For a bug, include:
 
 - Steps to reproduce, expected behavior, and what happened instead.
-- Chrome/Edge and extension versions.
+- Browser and extension/userscript versions, including the userscript manager when applicable.
 - The relevant public Cascade search or ride URL.
 - A screenshot when useful, and whether Dark Reader is enabled.
 
@@ -15,11 +15,11 @@ Remove personal information from URLs, screenshots, and logs. For larger feature
 
 ## Set up development
 
-Install Node.js and npm, fork or clone the repository, and run these commands from its root:
+Install Node.js 22 or later and npm, fork or clone the repository, and run these commands from its root:
 
 ```powershell
 npm ci
-npx playwright install chromium
+npx playwright install chromium firefox webkit
 ```
 
 Open `chrome://extensions`, enable **Developer mode**, click **Load unpacked**, and select the `extension` folder. After editing extension files, reload the extension and refresh Cascade's ride search page.
@@ -43,7 +43,9 @@ npm run check
 npm test
 ```
 
-`npm run check` validates the content script's JavaScript syntax. Playwright tests use Pacific time (`America/Los_Angeles`, including daylight saving time).
+`npm run build` generates the Firefox package and Safari-compatible userscript in `dist` from the shared `extension` source. Do not edit generated files manually; commit the regenerated `dist/cascade-calendar.user.js` with source changes. See the README for installation and signing instructions.
+
+`npm run check` rebuilds the packages, validates JavaScript syntax, and runs Mozilla's extension linter. Playwright tests run in Chromium, Firefox, and WebKit (the generated userscript), using Pacific time (`America/Los_Angeles`, including daylight saving time). Both commands build their required artifacts automatically.
 
 For extension UI changes, also check the live page in Chrome:
 
@@ -78,7 +80,7 @@ Build the extension upload ZIP with:
 ./scripts/package.ps1
 ```
 
-The ZIP is created in `dist`, which is ignored by Git. Do not commit `node_modules`, test output, or ZIPs. Version changes and Chrome Web Store submissions are handled by the maintainer; discuss them before including them in a pull request.
+The ZIP is created in `dist`; all build outputs except `dist/cascade-calendar.user.js` are ignored by Git. Do not commit `node_modules`, test output, or ZIPs. Version changes and Chrome Web Store submissions are handled by the maintainer; discuss them before including them in a pull request.
 
 ## Submit a pull request
 

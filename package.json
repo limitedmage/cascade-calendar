@@ -4,12 +4,14 @@
   "private": true,
   "description": "A calendar view for Cascade Bicycle Club free group rides.",
   "scripts": {
-    "test": "playwright test",
-    "check": "node --check extension\\content.js"
+    "build": "node scripts/build.js && web-ext build --source-dir dist/firefox --artifacts-dir dist --filename cascade-calendar-firefox-{version}.zip --overwrite-dest",
+    "test": "npm run build && playwright test",
+    "check": "npm run build && node --check extension/content.js && node --check scripts/build.js && node --check dist/cascade-calendar.user.js && web-ext lint --source-dir dist/firefox --warnings-as-errors"
   },
   "devDependencies": {
     "@playwright/test": "^1.56.0",
-    "darkreader": "^4.9.0"
+    "darkreader": "^4.9.133",
+    "web-ext": "^10.8.0"
   },
   "license": "MIT"
 }
